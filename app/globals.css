@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 162 65% 96%;              /* jungle-green-50 */
+    --foreground: 168 58% 23%;              /* jungle-green-800 */
+    --card: 162 65% 96%;                    /* jungle-green-50 */
+    --card-foreground: 168 58% 23%;         /* jungle-green-800 */
+    --popover: 162 65% 96%;                 /* jungle-green-50 */
+    --popover-foreground: 168 58% 23%;      /* jungle-green-800 */
+    --primary: 167 73% 42%;                 /* jungle-green-500 */
+    --primary-foreground: 162 65% 96%;      /* jungle-green-50 */
+    --secondary: 166 63% 64%;               /* jungle-green-300 */
+    --secondary-foreground: 168 58% 23%;    /* jungle-green-800 */
+    --muted: 166 71% 79%;                   /* jungle-green-200 */
+    --muted-foreground: 168 58% 23%;        /* jungle-green-800 */
+    --accent: 167 58% 52%;                  /* jungle-green-400 */
+    --accent-foreground: 162 65% 96%;       /* jungle-green-50 */
+    --destructive: 0 84.2% 60.2%;           /* unchanged red tone */
+    --destructive-foreground: 0 0% 100%;    /* white */
+    --border: 166 71% 79%;                  /* jungle-green-200 */
+    --input: 166 71% 79%;                   /* same as border */
+    --ring: 167 73% 42%;                    /* jungle-green-500 */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 168 65% 10%;                 /* jungle-green-950 */
+    --foreground: 162 65% 96%;                 /* jungle-green-50 */
+    --card: 168 65% 10%;                       /* same as background or slightly lighter */
+    --card-foreground: 162 65% 96%;            /* jungle-green-50 */
+    --popover: 168 65% 10%;
+    --popover-foreground: 162 65% 96%;
+    --primary: 167 73% 42%;                    /* jungle-green-500 */
+    --primary-foreground: 162 65% 96%;         /* jungle-green-50 */
+    --secondary: 168 58% 23%;                  /* jungle-green-800 */
+    --secondary-foreground: 162 65% 96%;       /* jungle-green-50 */
+    --muted: 168 47% 19%;                      /* jungle-green-900 */
+    --muted-foreground: 166 63% 64%;           /* jungle-green-300 */
+    --accent: 167 58% 52%;                     /* jungle-green-400 */
+    --accent-foreground: 162 65% 96%;          /* jungle-green-50 */
+    --destructive: 0 84.2% 60.2%;              /* unchanged, red alert color */
+    --destructive-foreground: 210 40% 98%;     /* unchanged, likely white */
+    --border: 167 71% 32%;                     /* jungle-green-600 */
+    --input: 167 71% 32%;                      /* same as border */
+    --ring: 167 73% 42%;                       /* match to --primary */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
