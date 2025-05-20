@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <Tabs defaultValue="home" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-9 mb-8">
+        <TabsList className="grid grid-cols-3 md:grid-cols-9 mb-10 h-full">
           <TabsTrigger value="home" className="flex flex-col items-center gap-1 py-2">
             <Home className="h-4 w-4" />
             <span className="text-xs">Home</span>
