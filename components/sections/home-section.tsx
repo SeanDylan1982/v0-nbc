@@ -1,11 +1,71 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, Trophy, Users } from "lucide-react"
 import { HeroCarousel } from "@/components/hero-carousel"
+import { type Event, getEvents } from "@/app/actions/events"
+import { type Result, getResults } from "@/app/actions/results"
 
 export default function HomeSection() {
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
+  const [latestResults, setLatestResults] = useState<Result[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
+  const [isLoadingResults, setIsLoadingResults] = useState(true)
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const allEvents = await getEvents()
+
+        // Sort events by date (this is a simple implementation - in a real app,
+        // you'd want to parse dates properly and handle different date formats)
+        const sortedEvents = allEvents
+          .filter((event) => event.category !== "joker") // Filter out regular joker events since they're shown separately
+          .sort((a, b) => {
+            // Simple string comparison - assumes dates are in a consistent format
+            // In a real app, you'd want to parse these properly
+            return a.date.localeCompare(b.date)
+          })
+          .slice(0, 3) // Take only the first 3 events
+
+        setUpcomingEvents(sortedEvents)
+      } catch (error) {
+        console.error("Failed to load events:", error)
+      } finally {
+        setIsLoadingEvents(false)
+      }
+    }
+
+    // Update the loadResults function to filter for competition results only
+    const loadResults = async () => {
+      try {
+        const allResults = await getResults()
+
+        // Filter for competition results only and sort by date (most recent first)
+        const sortedResults = allResults
+          .filter((result) => result.category === "competitions") // Only show competition results
+          .sort((a, b) => {
+            // Sort in reverse order for results (newest first)
+            return b.date.localeCompare(a.date)
+          })
+          .slice(0, 3) // Take only the first 3 results
+
+        setLatestResults(sortedResults)
+      } catch (error) {
+        console.error("Failed to load results:", error)
+      } finally {
+        setIsLoadingResults(false)
+      }
+    }
+
+    loadEvents()
+    loadResults()
+  }, [])
+
   return (
     <div className="space-y-8">
       <HeroCarousel />
@@ -19,20 +79,22 @@ export default function HomeSection() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              <li className="border-b pb-2">
-                <p className="font-medium">Joker Draw</p>
-                <p className="text-sm text-muted-foreground">Every Friday @ 7:00 PM</p>
-              </li>
-              <li className="border-b pb-2">
-                <p className="font-medium">Club Competition</p>
-                <p className="text-sm text-muted-foreground">June 15, 2025 @ 9:00 AM</p>
-              </li>
-              <li>
-                <p className="font-medium">Social Bowls</p>
-                <p className="text-sm text-muted-foreground">Every Wednesday @ 2:00 PM</p>
-              </li>
-            </ul>
+            {isLoadingEvents ? (
+              <div className="py-4 text-center text-muted-foreground">Loading events...</div>
+            ) : upcomingEvents.length > 0 ? (
+              <ul className="space-y-2">
+                {upcomingEvents.map((event) => (
+                  <li key={event.id} className="border-b pb-2 last:border-b-0">
+                    <p className="font-medium">{event.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {event.date} @ {event.time}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="py-4 text-center text-muted-foreground">No upcoming events found</div>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>
@@ -49,20 +111,24 @@ export default function HomeSection() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              <li className="border-b pb-2">
-                <p className="font-medium">Club Championships</p>
-                <p className="text-sm text-muted-foreground">Winner: John Smith</p>
-              </li>
-              <li className="border-b pb-2">
-                <p className="font-medium">District Tournament</p>
-                <p className="text-sm text-muted-foreground">Northmead Team: 2nd Place</p>
-              </li>
-              <li>
-                <p className="font-medium">Joker Draw Winner</p>
-                <p className="text-sm text-muted-foreground">Last Week: R5,000 - Mary Johnson</p>
-              </li>
-            </ul>
+            {isLoadingResults ? (
+              <div className="py-4 text-center text-muted-foreground">Loading results...</div>
+            ) : latestResults.length > 0 ? (
+              <ul className="space-y-2">
+                {latestResults.map((result) => (
+                  <li key={result.id} className="border-b pb-2 last:border-b-0">
+                    <p className="font-medium">{result.title}</p>
+                    {result.items && result.items.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        {result.items[0].position}: {result.items[0].name}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="py-4 text-center text-muted-foreground">No results found</div>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="outline" className="w-full" asChild>

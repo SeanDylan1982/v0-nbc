@@ -17,6 +17,7 @@ export type Result = {
   title: string
   date: string
   category: string
+  image_path?: string | null
   created_at?: string
   updated_at?: string
   items?: ResultItem[]
@@ -123,8 +124,25 @@ export async function getResultById(id: string) {
 }
 
 // Create a new result with its items
-export async function createResult(result: NewResult) {
+export async function createResult(result: NewResult, imageFile?: File) {
   const supabase = createServerSupabaseClient()
+  let image_path = result.image_path || null
+
+  // Upload image if provided
+  if (imageFile) {
+    const fileExt = imageFile.name.split(".").pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+    const filePath = `results/${fileName}`
+
+    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+    if (uploadError) {
+      console.error("Error uploading image:", uploadError)
+      throw new Error("Failed to upload image")
+    }
+
+    image_path = filePath
+  }
 
   // Start a transaction
   const { data: newResult, error: resultError } = await supabase
@@ -134,6 +152,7 @@ export async function createResult(result: NewResult) {
         title: result.title,
         date: result.date,
         category: result.category,
+        image_path,
       },
     ])
     .select()
@@ -170,17 +189,44 @@ export async function createResult(result: NewResult) {
 }
 
 // Update an existing result and its items
-export async function updateResult(id: string, result: Partial<Result> & { items?: Partial<ResultItem>[] }) {
+export async function updateResult(
+  id: string,
+  result: Partial<Result> & { items?: Partial<ResultItem>[] },
+  imageFile?: File,
+) {
   const supabase = createServerSupabaseClient()
+  let image_path = result.image_path
+
+  // Upload new image if provided
+  if (imageFile) {
+    // Delete old image if exists
+    if (result.image_path) {
+      await supabase.storage.from("images").remove([result.image_path])
+    }
+
+    const fileExt = imageFile.name.split(".").pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+    const filePath = `results/${fileName}`
+
+    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+    if (uploadError) {
+      console.error("Error uploading image:", uploadError)
+      throw new Error("Failed to upload image")
+    }
+
+    image_path = filePath
+  }
 
   // Update the result
-  if (result.title || result.date || result.category) {
+  if (result.title || result.date || result.category || image_path !== undefined) {
     const { error: resultError } = await supabase
       .from("results")
       .update({
         ...(result.title && { title: result.title }),
         ...(result.date && { date: result.date }),
         ...(result.category && { category: result.category }),
+        ...(image_path !== undefined && { image_path }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -224,6 +270,19 @@ export async function updateResult(id: string, result: Partial<Result> & { items
 // Delete a result (will cascade delete its items)
 export async function deleteResult(id: string) {
   const supabase = createServerSupabaseClient()
+
+  // Get the result to find the image path
+  const { data: result, error: fetchError } = await supabase.from("results").select("image_path").eq("id", id).single()
+
+  if (fetchError) {
+    console.error("Error fetching result for deletion:", fetchError)
+    throw new Error("Failed to fetch result for deletion")
+  }
+
+  // Delete the image if it exists
+  if (result.image_path) {
+    await supabase.storage.from("images").remove([result.image_path])
+  }
 
   const { error } = await supabase.from("results").delete().eq("id", id)
 

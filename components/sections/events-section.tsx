@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, MapPin } from "lucide-react"
-import { type Event, getEvents } from "@/app/actions/events"
+import { Calendar, Clock, ImageIcon, MapPin } from "lucide-react"
+import { type Event, getEvents, getImageUrl } from "@/app/actions/events"
 
 export default function EventsSection() {
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<(Event & { imageUrl?: string })[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
 
@@ -15,7 +16,19 @@ export default function EventsSection() {
     const loadEvents = async () => {
       try {
         const data = await getEvents()
-        setEvents(data)
+
+        // Get image URLs for all events
+        const eventsWithImages = await Promise.all(
+          data.map(async (event) => {
+            let imageUrl = undefined
+            if (event.image_path) {
+              imageUrl = await getImageUrl(event.image_path)
+            }
+            return { ...event, imageUrl }
+          }),
+        )
+
+        setEvents(eventsWithImages)
       } catch (error) {
         console.error("Failed to load events:", error)
       } finally {
@@ -59,6 +72,7 @@ export default function EventsSection() {
                   location={event.location}
                   description={event.description}
                   category={event.category as "competitions" | "social" | "joker"}
+                  imageUrl={event.imageUrl}
                 />
               ))}
             </div>
@@ -76,9 +90,10 @@ interface EventCardProps {
   location: string
   description: string
   category: "competitions" | "social" | "joker"
+  imageUrl?: string
 }
 
-function EventCard({ title, date, time, location, description, category }: EventCardProps) {
+function EventCard({ title, date, time, location, description, category, imageUrl }: EventCardProps) {
   const categoryColors = {
     competitions: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
     social: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
@@ -87,33 +102,53 @@ function EventCard({ title, date, time, location, description, category }: Event
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription className="mt-1">
-              <div className="flex items-center gap-1 mt-1">
-                <Calendar className="h-4 w-4" />
-                <span>{date}</span>
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                <Clock className="h-4 w-4" />
-                <span>{time}</span>
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                <MapPin className="h-4 w-4" />
-                <span>{location}</span>
-              </div>
-            </CardDescription>
-          </div>
-          <span className={`px-2 py-1 rounded-full text-xs ${categoryColors[category]}`}>
-            {category.charAt(0).toUpperCase() + category.slice(1)}
-          </span>
+      <div className="flex flex-col md:flex-row">
+        <div className="md:w-1/3 relative">
+          {imageUrl ? (
+            <div className="relative h-48 md:h-full">
+              <Image
+                src={imageUrl || "/placeholder.svg"}
+                alt={title}
+                fill
+                className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-48 md:h-full bg-muted rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+              <ImageIcon className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
         </div>
-      </CardHeader>
-      <CardContent>
-        <p>{description}</p>
-      </CardContent>
+        <div className="md:w-2/3">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription className="mt-1">
+                  <div className="flex items-center gap-1 mt-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{date}</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{time}</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{location}</span>
+                  </div>
+                </CardDescription>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs ${categoryColors[category]}`}>
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p>{description}</p>
+          </CardContent>
+        </div>
+      </div>
     </Card>
   )
 }

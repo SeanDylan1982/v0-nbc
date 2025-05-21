@@ -1,8 +1,57 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Trophy } from "lucide-react"
+import { Calendar, ImageIcon, Trophy } from "lucide-react"
+import { type Result, getResultsByCategory } from "@/app/actions/results"
+import { getImageUrl } from "@/app/actions/events"
 
 export default function ResultsSection() {
+  const [competitionResults, setCompetitionResults] = useState<(Result & { imageUrl?: string })[]>([])
+  const [leagueResults, setLeagueResults] = useState<(Result & { imageUrl?: string })[]>([])
+  const [jokerResults, setJokerResults] = useState<(Result & { imageUrl?: string })[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const loadResults = async () => {
+      try {
+        // Load results by category
+        const loadResultsByCategory = async (category: string) => {
+          const results = await getResultsByCategory(category)
+
+          // Get image URLs for all results
+          return await Promise.all(
+            results.map(async (result) => {
+              let imageUrl = undefined
+              if (result.image_path) {
+                imageUrl = await getImageUrl(result.image_path)
+              }
+              return { ...result, imageUrl }
+            }),
+          )
+        }
+
+        const [competitions, league, joker] = await Promise.all([
+          loadResultsByCategory("competitions"),
+          loadResultsByCategory("league"),
+          loadResultsByCategory("joker"),
+        ])
+
+        setCompetitionResults(competitions)
+        setLeagueResults(league)
+        setJokerResults(joker)
+      } catch (error) {
+        console.error("Failed to load results:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadResults()
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,99 +67,63 @@ export default function ResultsSection() {
         </TabsList>
 
         <TabsContent value="competitions" className="mt-6">
-          <div className="grid gap-6">
-            <ResultCard
-              title="Veterans Tournament"
-              date="March 15-16, 2025"
-              results={[
-                { position: "1st", name: "John Smith & Mary Johnson" },
-                { position: "2nd", name: "David Brown & Sarah Wilson" },
-                { position: "3rd", name: "Michael Davis & Elizabeth Taylor" },
-              ]}
-            />
-
-            <ResultCard
-              title="Novice Singles"
-              date="February 20-21, 2025"
-              results={[
-                { position: "1st", name: "James Wilson" },
-                { position: "2nd", name: "Emma Thompson" },
-                { position: "3rd", name: "Robert Johnson" },
-              ]}
-            />
-
-            <ResultCard
-              title="Club Championships 2024"
-              date="November 10-15, 2024"
-              results={[
-                { position: "Singles Winner", name: "Peter Anderson" },
-                { position: "Pairs Winners", name: "John Smith & Mary Johnson" },
-                { position: "Fours Winners", name: "Team Wilson" },
-              ]}
-            />
-          </div>
+          {isLoading ? (
+            <p>Loading results...</p>
+          ) : competitionResults.length === 0 ? (
+            <p>No competition results found.</p>
+          ) : (
+            <div className="grid gap-6">
+              {competitionResults.map((result) => (
+                <ResultCard
+                  key={result.id}
+                  title={result.title}
+                  date={result.date}
+                  results={result.items || []}
+                  imageUrl={result.imageUrl}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="league" className="mt-6">
-          <div className="grid gap-6">
-            <ResultCard
-              title="League Match vs Benoni Country Club"
-              date="April 20, 2025"
-              results={[
-                { position: "Final Score", name: "Northmead 72 - 68 Benoni" },
-                { position: "Rink 1", name: "Northmead 21 - 15 Benoni" },
-                { position: "Rink 2", name: "Northmead 18 - 20 Benoni" },
-                { position: "Rink 3", name: "Northmead 16 - 18 Benoni" },
-                { position: "Rink 4", name: "Northmead 17 - 15 Benoni" },
-              ]}
-            />
-
-            <ResultCard
-              title="League Match vs Boksburg"
-              date="April 6, 2025"
-              results={[
-                { position: "Final Score", name: "Northmead 65 - 70 Boksburg" },
-                { position: "Rink 1", name: "Northmead 18 - 16 Boksburg" },
-                { position: "Rink 2", name: "Northmead 14 - 22 Boksburg" },
-                { position: "Rink 3", name: "Northmead 17 - 15 Boksburg" },
-                { position: "Rink 4", name: "Northmead 16 - 17 Boksburg" },
-              ]}
-            />
-          </div>
+          {isLoading ? (
+            <p>Loading results...</p>
+          ) : leagueResults.length === 0 ? (
+            <p>No league match results found.</p>
+          ) : (
+            <div className="grid gap-6">
+              {leagueResults.map((result) => (
+                <ResultCard
+                  key={result.id}
+                  title={result.title}
+                  date={result.date}
+                  results={result.items || []}
+                  imageUrl={result.imageUrl}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="joker" className="mt-6">
-          <div className="grid gap-6">
-            <ResultCard
-              title="Joker Draw - May 10, 2025"
-              date="May 10, 2025"
-              results={[
-                { position: "Winner", name: "Mary Johnson - R5,000" },
-                { position: "Card Drawn", name: "Jack of Hearts" },
-                { position: "Jackpot Next Week", name: "R10,000" },
-              ]}
-            />
-
-            <ResultCard
-              title="Joker Draw - May 3, 2025"
-              date="May 3, 2025"
-              results={[
-                { position: "Winner", name: "David Brown - R500" },
-                { position: "Card Drawn", name: "10 of Clubs" },
-                { position: "Jackpot Next Week", name: "R5,000" },
-              ]}
-            />
-
-            <ResultCard
-              title="Joker Draw - April 26, 2025"
-              date="April 26, 2025"
-              results={[
-                { position: "Winner", name: "Sarah Wilson - R500" },
-                { position: "Card Drawn", name: "2 of Diamonds" },
-                { position: "Jackpot Next Week", name: "R4,500" },
-              ]}
-            />
-          </div>
+          {isLoading ? (
+            <p>Loading results...</p>
+          ) : jokerResults.length === 0 ? (
+            <p>No joker draw results found.</p>
+          ) : (
+            <div className="grid gap-6">
+              {jokerResults.map((result) => (
+                <ResultCard
+                  key={result.id}
+                  title={result.title}
+                  date={result.date}
+                  results={result.items || []}
+                  imageUrl={result.imageUrl}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
@@ -120,34 +133,55 @@ export default function ResultsSection() {
 interface ResultCardProps {
   title: string
   date: string
-  results: { position: string; name: string }[]
+  results: { id?: string; position: string; name: string }[]
+  imageUrl?: string
 }
 
-function ResultCard({ title, date, results }: ResultCardProps) {
+function ResultCard({ title, date, results, imageUrl }: ResultCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <div className="flex items-center gap-1 mt-1 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>{date}</span>
+      <div className="flex flex-col md:flex-row">
+        <div className="md:w-1/3 relative">
+          {imageUrl ? (
+            <div className="relative h-48 md:h-full">
+              <Image
+                src={imageUrl || "/placeholder.svg"}
+                alt={title}
+                fill
+                className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+              />
             </div>
-          </div>
-          <Trophy className="h-5 w-5 text-amber-500" />
+          ) : (
+            <div className="flex items-center justify-center h-48 md:h-full bg-muted rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+              <ImageIcon className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
         </div>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
-          {results.map((result, index) => (
-            <li key={index} className="flex justify-between items-center border-b pb-2 last:border-0">
-              <span className="font-medium">{result.position}</span>
-              <span>{result.name}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
+        <div className="md:w-2/3">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>{title}</CardTitle>
+                <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{date}</span>
+                </div>
+              </div>
+              <Trophy className="h-5 w-5 text-amber-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {results.map((result, index) => (
+                <li key={result.id || index} className="flex justify-between items-center border-b pb-2 last:border-0">
+                  <span className="font-medium">{result.position}</span>
+                  <span>{result.name}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </div>
+      </div>
     </Card>
   )
 }

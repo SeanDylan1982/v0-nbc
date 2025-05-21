@@ -11,6 +11,7 @@ export type Event = {
   location: string
   description: string
   category: string
+  image_path?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -64,56 +65,171 @@ export async function getEventById(id: string) {
 }
 
 // Create a new event
-export async function createEvent(event: NewEvent) {
+export async function createEvent(event: NewEvent, imageFile?: File) {
   const supabase = createServerSupabaseClient()
+  const eventData = { ...event }
 
-  const { data, error } = await supabase.from("events").insert([event]).select()
+  // Upload image if provided
+  if (imageFile) {
+    try {
+      const fileExt = imageFile.name.split(".").pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      const filePath = `events/${fileName}`
 
-  if (error) {
-    console.error("Error creating event:", error)
-    throw new Error("Failed to create event")
+      const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+      if (uploadError) {
+        console.error("Error uploading image:", uploadError)
+        throw new Error("Failed to upload image")
+      }
+
+      // Try to add image_path to the event data
+      eventData.image_path = filePath
+    } catch (error) {
+      console.error("Error handling image:", error)
+      // Continue without the image if there's an error
+    }
   }
 
-  revalidatePath("/admin/dashboard/events")
-  revalidatePath("/")
+  // Remove image_path if it's not supported by the database schema
+  try {
+    const { data, error } = await supabase.from("events").insert([eventData]).select()
 
-  return data[0] as Event
+    if (error) {
+      // If error mentions image_path column, try again without it
+      if (error.message.includes("image_path")) {
+        delete eventData.image_path
+        const { data: retryData, error: retryError } = await supabase.from("events").insert([eventData]).select()
+
+        if (retryError) {
+          console.error("Error creating event:", retryError)
+          throw new Error("Failed to create event")
+        }
+
+        revalidatePath("/admin/dashboard/events")
+        revalidatePath("/")
+
+        return retryData[0] as Event
+      } else {
+        console.error("Error creating event:", error)
+        throw new Error("Failed to create event")
+      }
+    }
+
+    revalidatePath("/admin/dashboard/events")
+    revalidatePath("/")
+
+    return data[0] as Event
+  } catch (error) {
+    console.error("Error creating event:", error)
+    throw new Error(`Failed to create event: ${error.message}`)
+  }
 }
 
 // Update an existing event
-export async function updateEvent(id: string, event: Partial<Event>) {
+export async function updateEvent(id: string, event: Partial<Event>, imageFile?: File) {
   const supabase = createServerSupabaseClient()
+  const eventData = { ...event, updated_at: new Date().toISOString() }
 
-  const { data, error } = await supabase
-    .from("events")
-    .update({ ...event, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
+  // Upload new image if provided
+  if (imageFile) {
+    try {
+      // Delete old image if exists
+      if (event.image_path) {
+        await supabase.storage.from("images").remove([event.image_path])
+      }
 
-  if (error) {
-    console.error("Error updating event:", error)
-    throw new Error("Failed to update event")
+      const fileExt = imageFile.name.split(".").pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      const filePath = `events/${fileName}`
+
+      const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+      if (uploadError) {
+        console.error("Error uploading image:", uploadError)
+        throw new Error("Failed to upload image")
+      }
+
+      eventData.image_path = filePath
+    } catch (error) {
+      console.error("Error handling image:", error)
+      // Continue without the image if there's an error
+    }
   }
 
-  revalidatePath("/admin/dashboard/events")
-  revalidatePath("/")
+  try {
+    const { data, error } = await supabase.from("events").update(eventData).eq("id", id).select()
 
-  return data[0] as Event
+    if (error) {
+      // If error mentions image_path column, try again without it
+      if (error.message.includes("image_path")) {
+        delete eventData.image_path
+        const { data: retryData, error: retryError } = await supabase
+          .from("events")
+          .update(eventData)
+          .eq("id", id)
+          .select()
+
+        if (retryError) {
+          console.error("Error updating event:", retryError)
+          throw new Error("Failed to update event")
+        }
+
+        revalidatePath("/admin/dashboard/events")
+        revalidatePath("/")
+
+        return retryData[0] as Event
+      } else {
+        console.error("Error updating event:", error)
+        throw new Error("Failed to update event")
+      }
+    }
+
+    revalidatePath("/admin/dashboard/events")
+    revalidatePath("/")
+
+    return data[0] as Event
+  } catch (error) {
+    console.error("Error updating event:", error)
+    throw new Error(`Failed to update event: ${error.message}`)
+  }
 }
 
 // Delete an event
 export async function deleteEvent(id: string) {
   const supabase = createServerSupabaseClient()
 
-  const { error } = await supabase.from("events").delete().eq("id", id)
+  try {
+    // Try to get the event to find the image path
+    const { data: event, error: fetchError } = await supabase.from("events").select("*").eq("id", id).single()
 
-  if (error) {
-    console.error("Error deleting event:", error)
-    throw new Error("Failed to delete event")
+    // If we can get the image_path, delete the image
+    if (!fetchError && event && event.image_path) {
+      await supabase.storage.from("images").remove([event.image_path])
+    }
+
+    const { error } = await supabase.from("events").delete().eq("id", id)
+
+    if (error) {
+      console.error("Error deleting event:", error)
+      throw new Error("Failed to delete event")
+    }
+
+    revalidatePath("/admin/dashboard/events")
+    revalidatePath("/")
+
+    return { success: true }
+  } catch (error) {
+    console.error("Error in delete process:", error)
+    throw new Error(`Failed to delete event: ${error.message}`)
   }
+}
 
-  revalidatePath("/admin/dashboard/events")
-  revalidatePath("/")
+// Get image URL from path
+export async function getImageUrl(path: string | null) {
+  if (!path) return null
 
-  return { success: true }
+  const supabase = createServerSupabaseClient()
+  const { data } = supabase.storage.from("images").getPublicUrl(path)
+  return data.publicUrl
 }

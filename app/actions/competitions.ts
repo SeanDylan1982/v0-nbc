@@ -12,6 +12,7 @@ export type Competition = {
   description: string
   status: "Upcoming" | "In Progress" | "Completed"
   winner?: string | null
+  image_path?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -65,10 +66,30 @@ export async function getCompetitionById(id: string) {
 }
 
 // Create a new competition
-export async function createCompetition(competition: NewCompetition) {
+export async function createCompetition(competition: NewCompetition, imageFile?: File) {
   const supabase = createServerSupabaseClient()
+  let image_path = competition.image_path || null
 
-  const { data, error } = await supabase.from("competitions").insert([competition]).select()
+  // Upload image if provided
+  if (imageFile) {
+    const fileExt = imageFile.name.split(".").pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+    const filePath = `competitions/${fileName}`
+
+    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+    if (uploadError) {
+      console.error("Error uploading image:", uploadError)
+      throw new Error("Failed to upload image")
+    }
+
+    image_path = filePath
+  }
+
+  const { data, error } = await supabase
+    .from("competitions")
+    .insert([{ ...competition, image_path }])
+    .select()
 
   if (error) {
     console.error("Error creating competition:", error)
@@ -82,12 +103,34 @@ export async function createCompetition(competition: NewCompetition) {
 }
 
 // Update an existing competition
-export async function updateCompetition(id: string, competition: Partial<Competition>) {
+export async function updateCompetition(id: string, competition: Partial<Competition>, imageFile?: File) {
   const supabase = createServerSupabaseClient()
+  let image_path = competition.image_path
+
+  // Upload new image if provided
+  if (imageFile) {
+    // Delete old image if exists
+    if (competition.image_path) {
+      await supabase.storage.from("images").remove([competition.image_path])
+    }
+
+    const fileExt = imageFile.name.split(".").pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+    const filePath = `competitions/${fileName}`
+
+    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
+
+    if (uploadError) {
+      console.error("Error uploading image:", uploadError)
+      throw new Error("Failed to upload image")
+    }
+
+    image_path = filePath
+  }
 
   const { data, error } = await supabase
     .from("competitions")
-    .update({ ...competition, updated_at: new Date().toISOString() })
+    .update({ ...competition, image_path, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
 
@@ -105,6 +148,23 @@ export async function updateCompetition(id: string, competition: Partial<Competi
 // Delete a competition
 export async function deleteCompetition(id: string) {
   const supabase = createServerSupabaseClient()
+
+  // Get the competition to find the image path
+  const { data: competition, error: fetchError } = await supabase
+    .from("competitions")
+    .select("image_path")
+    .eq("id", id)
+    .single()
+
+  if (fetchError) {
+    console.error("Error fetching competition for deletion:", fetchError)
+    throw new Error("Failed to fetch competition for deletion")
+  }
+
+  // Delete the image if it exists
+  if (competition.image_path) {
+    await supabase.storage.from("images").remove([competition.image_path])
+  }
 
   const { error } = await supabase.from("competitions").delete().eq("id", id)
 
