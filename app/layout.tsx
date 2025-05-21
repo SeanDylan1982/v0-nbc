@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { Suspense } from "react"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
@@ -30,7 +31,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="flex min-h-screen flex-col">
             <Analytics />
-            <Header />
+            <Suspense fallback={<div className="h-16 border-b bg-background/95"></div>}>
+              <Header />
+            </Suspense>
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
