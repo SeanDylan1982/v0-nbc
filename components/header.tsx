@@ -4,52 +4,18 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
 import { AuthButton } from "./auth/auth-button"
 import { UserNav } from "./auth/user-nav"
+import { useSession } from "next-auth/react"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
-
-  // This will force a refresh when auth state changes
-  const refreshParam = searchParams.get("refresh")
-
-  useEffect(() => {
-    async function getUser() {
-      setLoading(true)
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        setUser(user)
-      } catch (error) {
-        console.error('Error fetching user:', error)
-      }
-      setLoading(false)
-    }
-
-    getUser()
-
-    // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        setUser(null)
-      } else if (session?.user) {
-        setUser(session.user)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase.auth, refreshParam])
+  const { data: session, status } = useSession()
+  const loading = status === "loading"
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -63,12 +29,12 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-6">
           {!loading && (
             <>
-              {user ? (
+              {session ? (
                 <>
                   <Link href="/members" className="text-sm font-medium hover:underline">
                     Members Area
                   </Link>
-                  <UserNav user={user} />
+                  <UserNav user={session.user} />
                 </>
               ) : (
                 <AuthButton />
@@ -91,7 +57,7 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="flex flex-col gap-4 mt-8">
-                {!loading && user && (
+                {!loading && session && (
                   <Link
                     href="/members"
                     className="text-sm font-medium hover:underline"
@@ -105,12 +71,12 @@ export default function Header() {
                 </Link>
                 {!loading && (
                   <>
-                    {user ? (
+                    {session ? (
                       <Button
                         variant="outline"
                         onClick={async () => {
-                          await supabase.auth.signOut()
-                          setIsOpen(false)
+                          await signOut();
+                          setIsOpen(false);
                         }}
                       >
                         Sign Out
