@@ -1,180 +1,96 @@
-"use server"
-
-import { createServerSupabaseClient } from "@/lib/supabase"
-import { revalidatePath } from "next/cache"
+import { fetcher } from "@/lib/utils"
 
 export type Competition = {
   id: string
   title: string
   date: string
   format: string
-  entry_deadline: string
+  entryDeadline: string
   description: string
   status: "Upcoming" | "In Progress" | "Completed"
   winner?: string | null
-  image_path?: string | null
-  created_at?: string
-  updated_at?: string
+  imagePath?: string | null
+  createdAt?: string
+  updatedAt?: string
 }
 
-export type NewCompetition = Omit<Competition, "id" | "created_at" | "updated_at">
+export type NewCompetition = Omit<Competition, "id" | "createdAt" | "updatedAt">
 
 // Get all competitions
 export async function getCompetitions() {
-  const supabase = createServerSupabaseClient()
-
-  const { data, error } = await supabase.from("competitions").select("*").order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("Error fetching competitions:", error)
-    throw new Error("Failed to fetch competitions")
-  }
-
-  return data as Competition[]
+  const competitions = await fetcher("/api/competitions")
+  return competitions
 }
 
 // Get competitions by status
 export async function getCompetitionsByStatus(status: Competition["status"]) {
-  const supabase = createServerSupabaseClient()
-
-  const { data, error } = await supabase
-    .from("competitions")
-    .select("*")
-    .eq("status", status)
-    .order("date", { ascending: true })
-
-  if (error) {
-    console.error("Error fetching competitions by status:", error)
-    throw new Error("Failed to fetch competitions by status")
-  }
-
-  return data as Competition[]
+  const competitions = await fetcher(`/api/competitions?status=${status}`)
+  return competitions
 }
 
 // Get a single competition by ID
 export async function getCompetitionById(id: string) {
-  const supabase = createServerSupabaseClient()
-
-  const { data, error } = await supabase.from("competitions").select("*").eq("id", id).single()
-
-  if (error) {
-    console.error("Error fetching competition:", error)
-    throw new Error("Failed to fetch competition")
-  }
-
-  return data as Competition
+  const competition = await fetcher(`/api/competitions/${id}`)
+  return competition
 }
 
 // Create a new competition
 export async function createCompetition(competition: NewCompetition, imageFile?: File) {
-  const supabase = createServerSupabaseClient()
-  let image_path = competition.image_path || null
+  let imagePath = null
 
-  // Upload image if provided
   if (imageFile) {
-    const fileExt = imageFile.name.split(".").pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-    const filePath = `competitions/${fileName}`
-
-    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
-
-    if (uploadError) {
-      console.error("Error uploading image:", uploadError)
-      throw new Error("Failed to upload image")
-    }
-
-    image_path = filePath
+    // Handle image upload to your storage solution
+    imagePath = imageFile.name
   }
 
-  const { data, error } = await supabase
-    .from("competitions")
-    .insert([{ ...competition, image_path }])
-    .select()
+  const response = await fetch("/api/competitions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...competition, imagePath }),
+  })
 
-  if (error) {
-    console.error("Error creating competition:", error)
+  if (!response.ok) {
     throw new Error("Failed to create competition")
   }
 
-  revalidatePath("/admin/dashboard/competitions")
-  revalidatePath("/")
-
-  return data[0] as Competition
+  return response.json()
 }
 
 // Update an existing competition
 export async function updateCompetition(id: string, competition: Partial<Competition>, imageFile?: File) {
-  const supabase = createServerSupabaseClient()
-  let image_path = competition.image_path
+  let imagePath = competition.imagePath
 
-  // Upload new image if provided
   if (imageFile) {
-    // Delete old image if exists
-    if (competition.image_path) {
-      await supabase.storage.from("images").remove([competition.image_path])
-    }
-
-    const fileExt = imageFile.name.split(".").pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-    const filePath = `competitions/${fileName}`
-
-    const { error: uploadError } = await supabase.storage.from("images").upload(filePath, imageFile)
-
-    if (uploadError) {
-      console.error("Error uploading image:", uploadError)
-      throw new Error("Failed to upload image")
-    }
-
-    image_path = filePath
+    // Handle image upload to your storage solution
+    imagePath = imageFile.name
   }
 
-  const { data, error } = await supabase
-    .from("competitions")
-    .update({ ...competition, image_path, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
+  const response = await fetch(`/api/competitions/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...competition, imagePath }),
+  })
 
-  if (error) {
-    console.error("Error updating competition:", error)
+  if (!response.ok) {
     throw new Error("Failed to update competition")
   }
 
-  revalidatePath("/admin/dashboard/competitions")
-  revalidatePath("/")
-
-  return data[0] as Competition
+  return response.json()
 }
 
 // Delete a competition
 export async function deleteCompetition(id: string) {
-  const supabase = createServerSupabaseClient()
+  const response = await fetch(`/api/competitions/${id}`, {
+    method: "DELETE",
+  })
 
-  // Get the competition to find the image path
-  const { data: competition, error: fetchError } = await supabase
-    .from("competitions")
-    .select("image_path")
-    .eq("id", id)
-    .single()
-
-  if (fetchError) {
-    console.error("Error fetching competition for deletion:", fetchError)
-    throw new Error("Failed to fetch competition for deletion")
-  }
-
-  // Delete the image if it exists
-  if (competition.image_path) {
-    await supabase.storage.from("images").remove([competition.image_path])
-  }
-
-  const { error } = await supabase.from("competitions").delete().eq("id", id)
-
-  if (error) {
-    console.error("Error deleting competition:", error)
+  if (!response.ok) {
     throw new Error("Failed to delete competition")
   }
-
-  revalidatePath("/admin/dashboard/competitions")
-  revalidatePath("/")
 
   return { success: true }
 }
