@@ -26,19 +26,24 @@ export default function Header() {
   useEffect(() => {
     async function getUser() {
       setLoading(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        setUser(user)
+      } catch (error) {
+        console.error('Error fetching user:', error)
+      }
       setLoading(false)
     }
 
     getUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        setUser(null)
+      } else if (session?.user) {
+        setUser(session.user)
+      }
     })
 
     return () => {
