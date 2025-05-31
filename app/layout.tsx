@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/components/providers/session-provider"
+import AuthProvider from "@/components/providers/session-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
