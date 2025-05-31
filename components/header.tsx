@@ -31,7 +31,7 @@ export default function Header() {
             <>
               {session ? (
                 <>
-                  <Link href="/members" className="text-sm font-medium hover:underline">
+                  <Link href="/members\" className="text-sm font-medium hover:underline">
                     Members Area
                   </Link>
                   <UserNav user={session.user} />
