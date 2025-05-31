@@ -1,16 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import { ModeToggle } from "./mode-toggle"
 import { AuthButton } from "./auth/auth-button"
 import { UserNav } from "./auth/user-nav"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
