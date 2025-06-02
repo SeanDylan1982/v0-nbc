@@ -2,32 +2,53 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase"
 
-// Initialize storage buckets
-export async function initializeStorage() {
+// Check if storage buckets exist (read-only operation)
+export async function checkStorageBuckets() {
   const supabase = createServerSupabaseClient()
 
   try {
-    // Check if the images bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets()
-    const imagesBucketExists = buckets?.some((bucket) => bucket.name === "images")
+    const { data: buckets, error } = await supabase.storage.listBuckets()
 
-    // Create the images bucket if it doesn't exist
-    if (!imagesBucketExists) {
-      const { data, error } = await supabase.storage.createBucket("images", {
-        public: true, // Make the bucket public so images can be accessed without authentication
-      })
-
-      if (error) {
-        console.error("Error creating images bucket:", error)
-        throw new Error("Failed to create images bucket")
-      }
-
-      console.log("Created images bucket:", data)
+    if (error) {
+      console.error("Error listing buckets:", error)
+      return { success: false, error: error.message }
     }
 
-    return { success: true }
+    const imagesBucketExists = buckets?.some((bucket) => bucket.name === "images")
+    const profilesBucketExists = buckets?.some((bucket) => bucket.name === "profiles")
+
+    return {
+      success: true,
+      buckets: {
+        images: imagesBucketExists,
+        profiles: profilesBucketExists,
+      },
+    }
   } catch (error) {
-    console.error("Error initializing storage:", error)
-    throw new Error("Failed to initialize storage")
+    console.error("Error checking storage:", error)
+    return { success: false, error: "Failed to check storage buckets" }
+  }
+}
+
+// Simple bucket creation without RLS issues
+export async function createStorageBucket(bucketName: string) {
+  const supabase = createServerSupabaseClient()
+
+  try {
+    const { data, error } = await supabase.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: 52428800, // 50MB
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+    })
+
+    if (error) {
+      console.error(`Error creating ${bucketName} bucket:`, error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error(`Error creating ${bucketName} bucket:`, error)
+    return { success: false, error: "Failed to create bucket" }
   }
 }

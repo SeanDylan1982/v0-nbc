@@ -25,9 +25,14 @@ export default function ContactSection() {
       const result = await createMessage(formData)
 
       if (result.success) {
-        toast.success("Your message has been sent successfully! We'll get back to you soon.")
-        // Reset form
-        e.currentTarget.reset()
+        toast.success(
+          "Message sent successfully! Our administrator has been notified and will get back to you within 24-48 hours.",
+        )
+        // Reset form safely
+        const form = e.currentTarget
+        if (form) {
+          form.reset()
+        }
       } else {
         toast.error(result.error || "Failed to send message. Please try again.")
       }
@@ -58,24 +63,43 @@ export default function ContactSection() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first_name">First name</Label>
-                    <Input id="first_name" name="first_name" required disabled={isSubmitting} />
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      required
+                      disabled={isSubmitting}
+                      autoComplete="given-name"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="last_name">Last name</Label>
-                    <Input id="last_name" name="last_name" required disabled={isSubmitting} />
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      required
+                      disabled={isSubmitting}
+                      autoComplete="family-name"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" name="email" type="email" required disabled={isSubmitting} />
+                  <Input id="email" name="email" type="email" required disabled={isSubmitting} autoComplete="email" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (optional)</Label>
-                  <Input id="phone" name="phone" type="tel" disabled={isSubmitting} />
+                  <Input id="phone" name="phone" type="tel" disabled={isSubmitting} autoComplete="tel" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
-                  <Textarea id="message" name="message" rows={4} required disabled={isSubmitting} />
+                  <Textarea
+                    id="message"
+                    name="message"
+                    rows={4}
+                    required
+                    disabled={isSubmitting}
+                    placeholder="Please enter your message here..."
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Sending..." : "Send Message"}

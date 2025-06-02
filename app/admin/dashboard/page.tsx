@@ -2,12 +2,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, FileText, ImageIcon, Trophy, Upload } from "lucide-react"
-import { InitializeStorage } from "./initialize-storage"
 
 export default function AdminDashboardPage() {
   return (
     <div className="space-y-6">
-      <InitializeStorage />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">Welcome to the Northmead Bowls Club admin dashboard.</p>

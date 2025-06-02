@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import type { User } from "@supabase/supabase-js"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle, LogIn } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ProfileImageUpload } from "@/components/profile/profile-image-upload"
+import { supabase } from "@/lib/supabase"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -17,7 +17,6 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     async function checkAuth() {
@@ -25,7 +24,7 @@ export default function ProfilePage() {
         setLoading(true)
         setError(null)
 
-        // First check if we have a session
+        // Get current session
         const {
           data: { session },
           error: sessionError,
@@ -45,7 +44,7 @@ export default function ProfilePage() {
           return
         }
 
-        // If we have a session, get the user
+        // Get user data
         const {
           data: { user },
           error: userError,
@@ -89,13 +88,24 @@ export default function ProfilePage() {
       } else if (event === "TOKEN_REFRESHED" && session?.user) {
         setUser(session.user)
         setAuthChecked(true)
+      } else if (event === "USER_UPDATED" && session?.user) {
+        setUser(session.user)
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase.auth])
+  }, [])
+
+  const handleImageUpdate = (imageUrl: string) => {
+    // Force a refresh of user data to get updated avatar
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUser(user)
+      }
+    })
+  }
 
   // Show loading state
   if (loading || !authChecked) {
@@ -108,7 +118,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-24 w-24 rounded-full" />
               <div className="space-y-2">
                 <Skeleton className="h-4 w-[250px]" />
                 <Skeleton className="h-4 w-[200px]" />
@@ -165,14 +175,6 @@ export default function ProfilePage() {
     )
   }
 
-  const initials = user.user_metadata?.full_name
-    ? user.user_metadata.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-    : user.email?.charAt(0).toUpperCase() || "U"
-
   return (
     <div className="container py-10">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -188,19 +190,14 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage
-                  src={user.user_metadata?.avatar_url || "/placeholder.svg"}
-                  alt={user.user_metadata?.full_name || user.email || ""}
-                />
-                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
-              </Avatar>
+              <ProfileImageUpload user={user} onImageUpdate={handleImageUpdate} />
               <div className="space-y-1">
                 <h2 className="text-2xl font-semibold">{user.user_metadata?.full_name || "User"}</h2>
                 <p className="text-muted-foreground">{user.email}</p>
                 <p className="text-sm text-muted-foreground">
                   Member since {new Date(user.created_at).toLocaleDateString()}
                 </p>
+                <p className="text-xs text-muted-foreground">Click your profile picture to update it</p>
               </div>
             </div>
 

@@ -1,54 +1,30 @@
 import { createClient } from "@supabase/supabase-js"
-import { createServerClient, type CookieOptions } from "@supabase/ssr"
-import { cookies } from "next/headers"
 
-// Create a Supabase client for server components
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+// Create a single client instance for client-side usage
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+})
+
+// For server-side usage
 export function createServerSupabaseClient() {
-  const cookieStore = cookies()
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // Handle cookies in read-only context during SSG
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options })
-          } catch (error) {
-            // Handle cookies in read-only context during SSG
-          }
-        },
-      },
-    },
-  )
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing Supabase environment variables")
+  }
 
-  return supabase
+  return createClient(supabaseUrl, supabaseKey)
 }
 
-// Create a singleton Supabase client for client components
-let clientInstance: ReturnType<typeof createClient> | null = null
-
+// For client components
 export function createClientSupabaseClient() {
-  if (clientInstance) return clientInstance
-
-  clientInstance = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: {
-      persistSession: true,
-      storageKey: "supabase-auth",
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  })
-
-  return clientInstance
+  return supabase
 }

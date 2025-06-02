@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useSearchParams } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -17,80 +16,46 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
-
-  // This will force a refresh when auth state changes
-  const refreshParam = searchParams.get("refresh")
 
   useEffect(() => {
-    async function getUser() {
+    // Get initial session
+    const getSession = async () => {
       try {
-        setLoading(true)
-
-        // First get the session
         const {
           data: { session },
-          error: sessionError,
         } = await supabase.auth.getSession()
-
-        if (sessionError) {
-          console.error("Header: Session error:", sessionError)
-          setUser(null)
-          setLoading(false)
-          return
-        }
-
-        if (!session) {
-          console.log("Header: No session found")
-          setUser(null)
-          setLoading(false)
-          return
-        }
-
-        // If we have a session, get the user
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser()
-
-        if (userError) {
-          console.error("Header: User error:", userError)
-          setUser(null)
-        } else {
-          console.log("Header: User loaded:", user?.email)
-          setUser(user)
-        }
+        setUser(session?.user ?? null)
+        console.log("Initial session:", session?.user?.email || "No user")
       } catch (error) {
-        console.error("Header: Error getting user:", error)
-        setUser(null)
+        console.error("Error getting session:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    getUser()
+    getSession()
 
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Header: Auth state changed:", event, session?.user?.email)
-
-      if (event === "SIGNED_OUT") {
-        setUser(null)
-      } else if (event === "SIGNED_IN" && session?.user) {
-        setUser(session.user)
-      } else if (event === "TOKEN_REFRESHED" && session?.user) {
-        setUser(session.user)
-      }
-
+      console.log("Auth state changed:", event, session?.user?.email || "No user")
+      setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    return () => {
-      subscription.unsubscribe()
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setIsOpen(false)
+    } catch (error) {
+      console.error("Error signing out:", error)
     }
-  }, [supabase.auth, refreshParam])
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -147,13 +112,7 @@ export default function Header() {
                 {!loading && (
                   <>
                     {user ? (
-                      <Button
-                        variant="outline"
-                        onClick={async () => {
-                          await supabase.auth.signOut()
-                          setIsOpen(false)
-                        }}
-                      >
+                      <Button variant="outline" onClick={handleSignOut}>
                         Sign Out
                       </Button>
                     ) : (
