@@ -13,12 +13,19 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 import { EmailVerificationModal } from "./email-verification-modal"
 
-const formSchema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-})
+const formSchema = z
+  .object({
+    fullName: z.string().min(2, { message: "Full name must be at least 2 characters" }),
+    email: z.string().email({ message: "Please enter a valid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+    confirmPassword: z.string().min(6, { message: "Please confirm your password" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
 
+// Changed function name from SignupForm to SignUpForm (capital U)
 export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   const [isLoading, setIsLoading] = useState(false)
   const [showEmailVerification, setShowEmailVerification] = useState(false)
@@ -33,17 +40,18 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       fullName: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("Signup form submitted with:", { email: values.email, fullName: values.fullName })
     setIsLoading(true)
 
     try {
-      console.log("Starting signup process...")
+      console.log("Attempting to sign up...")
 
-      // Sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -53,75 +61,58 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
         },
       })
 
-      console.log("Auth response:", { authData, authError })
+      console.log("Sign up response:", {
+        user: data.user?.email,
+        session: !!data.session,
+        error: error?.message,
+      })
 
-      if (authError) {
-        console.error("Auth error:", authError)
-        toast({
-          variant: "destructive",
-          title: "Sign up failed",
-          description: authError.message,
-        })
-        return
-      }
+      if (error) {
+        console.error("Sign up error:", error)
 
-      if (!authData.user) {
-        toast({
-          variant: "destructive",
-          title: "Sign up failed",
-          description: "Failed to create user account",
-        })
-        return
-      }
+        let errorMessage = error.message
 
-      // Create user profile
-      try {
-        const { error: profileError } = await supabase.from("users").insert([
-          {
-            id: authData.user.id,
-            email: values.email,
-            full_name: values.fullName,
-          },
-        ])
-
-        if (profileError) {
-          console.error("Profile creation error:", profileError)
-        } else {
-          console.log("Profile created successfully")
+        if (error.message.includes("User already registered")) {
+          errorMessage = "An account with this email already exists. Please try signing in instead."
+        } else if (error.message.includes("signup_disabled")) {
+          errorMessage = "Account registration is currently disabled. Please contact support."
         }
-      } catch (profileErr) {
-        console.error("Profile creation exception:", profileErr)
-      }
 
-      // Check if email confirmation is required
-      if (!authData.session && authData.user && !authData.user.email_confirmed_at) {
-        // Show email verification modal
-        setUserEmail(values.email)
-        setShowEmailVerification(true)
-
-        // Reset form
-        form.reset()
-
-        // Close the auth dialog
-        onSuccess()
-      } else {
-        // User is immediately signed in (email confirmation disabled)
         toast({
-          title: "Account created successfully!",
-          description: "Welcome to Northmead Bowls Club!",
+          variant: "destructive",
+          title: "Sign up failed",
+          description: errorMessage,
         })
-
-        // Reset form
-        form.reset()
-
-        // Close the dialog
-        onSuccess()
-
-        // Refresh to update auth state
-        router.refresh()
+        setIsLoading(false)
+        return
       }
+
+      if (!data.user) {
+        console.error("No user data received")
+        toast({
+          variant: "destructive",
+          title: "Sign up failed",
+          description: "No user data received. Please try again.",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      console.log("Sign up successful for user:", data.user.email)
+
+      // Show email verification modal
+      setUserEmail(values.email)
+      setShowEmailVerification(true)
+
+      // Reset form
+      form.reset()
+
+      toast({
+        title: "Account created!",
+        description: "Please check your email to verify your account.",
+      })
     } catch (error) {
-      console.error("Unexpected error:", error)
+      console.error("Unexpected sign up error:", error)
       toast({
         variant: "destructive",
         title: "Sign up failed",
@@ -143,7 +134,7 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" {...field} disabled={isLoading} />
+                  <Input placeholder="John Doe" {...field} disabled={isLoading} autoComplete="name" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -156,7 +147,13 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="your.email@example.com" {...field} disabled={isLoading} />
+                  <Input
+                    placeholder="your.email@example.com"
+                    {...field}
+                    disabled={isLoading}
+                    type="email"
+                    autoComplete="email"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -169,20 +166,50 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    {...field}
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    {...field}
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            onClick={() => console.log("Sign up button clicked")}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
               </>
             ) : (
-              "Sign Up"
+              "Create Account"
             )}
           </Button>
         </form>

@@ -1,31 +1,54 @@
 import { createClient } from "@supabase/supabase-js"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
-// Create a single supabase client for server-side usage
-export const createServerSupabaseClient = () => {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Create a Supabase client for server components
+export function createServerSupabaseClient() {
+  const cookieStore = cookies()
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables")
-  }
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Handle cookies in read-only context during SSG
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: "", ...options })
+          } catch (error) {
+            // Handle cookies in read-only context during SSG
+          }
+        },
+      },
+    },
+  )
 
-  return createClient(supabaseUrl, supabaseKey)
+  return supabase
 }
 
-// Create a singleton client for client-side usage
-let clientSupabaseClient: ReturnType<typeof createClient> | null = null
+// Create a singleton Supabase client for client components
+let clientInstance: ReturnType<typeof createClient> | null = null
 
-export const createClientSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+export function createClientSupabaseClient() {
+  if (clientInstance) return clientInstance
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables")
-  }
+  clientInstance = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: {
+      persistSession: true,
+      storageKey: "supabase-auth",
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
 
-  if (!clientSupabaseClient) {
-    clientSupabaseClient = createClient(supabaseUrl, supabaseKey)
-  }
-
-  return clientSupabaseClient
+  return clientInstance
 }

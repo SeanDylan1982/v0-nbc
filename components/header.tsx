@@ -27,12 +27,42 @@ export default function Header() {
     async function getUser() {
       try {
         setLoading(true)
+
+        // First get the session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          console.error("Header: Session error:", sessionError)
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        if (!session) {
+          console.log("Header: No session found")
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        // If we have a session, get the user
         const {
           data: { user },
+          error: userError,
         } = await supabase.auth.getUser()
-        setUser(user)
+
+        if (userError) {
+          console.error("Header: User error:", userError)
+          setUser(null)
+        } else {
+          console.log("Header: User loaded:", user?.email)
+          setUser(user)
+        }
       } catch (error) {
-        console.error("Error getting user:", error)
+        console.error("Header: Error getting user:", error)
         setUser(null)
       } finally {
         setLoading(false)
@@ -43,9 +73,17 @@ export default function Header() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Header: Auth state changed:", event, session?.user?.email)
-      setUser(session?.user || null)
+
+      if (event === "SIGNED_OUT") {
+        setUser(null)
+      } else if (event === "SIGNED_IN" && session?.user) {
+        setUser(session.user)
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        setUser(session.user)
+      }
+
       setLoading(false)
     })
 

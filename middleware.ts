@@ -11,14 +11,20 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-    if (!session) {
-      // Redirect to home page with a message
+      if (!session) {
+        const redirectUrl = new URL("/", req.url)
+        redirectUrl.searchParams.set("message", "Please log in to access this page")
+        return NextResponse.redirect(redirectUrl)
+      }
+    } catch (error) {
+      console.error("Middleware error:", error)
       const redirectUrl = new URL("/", req.url)
-      redirectUrl.searchParams.set("message", "Please log in to access this page")
+      redirectUrl.searchParams.set("message", "Authentication error occurred")
       return NextResponse.redirect(redirectUrl)
     }
   }

@@ -22,32 +22,48 @@ export type NewEvent = Omit<Event, "id" | "created_at" | "updated_at">
 export async function getEvents() {
   const supabase = createServerSupabaseClient()
 
-  const { data, error } = await supabase.from("events").select("*").order("created_at", { ascending: false })
+  try {
+    console.log("Fetching events...")
+    const { data, error } = await supabase.from("events").select("*").order("created_at", { ascending: false })
 
-  if (error) {
-    console.error("Error fetching events:", error)
-    throw new Error("Failed to fetch events")
+    if (error) {
+      console.error("Error fetching events:", error)
+      throw new Error(`Failed to fetch events: ${error.message}`)
+    }
+
+    console.log(`Successfully fetched ${data?.length || 0} events`)
+    return data as Event[]
+  } catch (error) {
+    console.error("Exception in getEvents:", error)
+    // Return empty array instead of throwing to prevent UI errors
+    return [] as Event[]
   }
-
-  return data as Event[]
 }
 
 // Get events by category
 export async function getEventsByCategory(category: string) {
   const supabase = createServerSupabaseClient()
 
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("category", category)
-    .order("created_at", { ascending: false })
+  try {
+    console.log(`Fetching events by category: ${category}`)
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("category", category)
+      .order("created_at", { ascending: false })
 
-  if (error) {
-    console.error("Error fetching events by category:", error)
-    throw new Error("Failed to fetch events by category")
+    if (error) {
+      console.error("Error fetching events by category:", error)
+      throw new Error(`Failed to fetch events by category: ${error.message}`)
+    }
+
+    console.log(`Successfully fetched ${data?.length || 0} events for category ${category}`)
+    return data as Event[]
+  } catch (error) {
+    console.error(`Exception in getEventsByCategory for ${category}:`, error)
+    // Return empty array instead of throwing to prevent UI errors
+    return [] as Event[]
   }
-
-  return data as Event[]
 }
 
 // Get a single event by ID

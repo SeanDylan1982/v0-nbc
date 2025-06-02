@@ -167,11 +167,11 @@ export default function HomeSection() {
         <div className="flex flex-col md:flex-row gap-6 items-center">
           <div className="md:w-1/2">
             <Image
-              src="/placeholder.svg?height=300&width=400"
+              src="/images/joker-draw.gif"
               alt="Joker Draw"
-              width={400}
+              width={300}
               height={300}
-              className="rounded-lg"
+              className="rounded-lg mx-auto"
             />
           </div>
           <div className="md:w-1/2">

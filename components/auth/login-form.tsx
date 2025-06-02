@@ -35,20 +35,25 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("Login form submitted with:", { email: values.email })
     setIsLoading(true)
 
     try {
-      console.log("Starting login process...")
+      console.log("Attempting to sign in...")
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       })
 
-      console.log("Login response:", { data, error })
+      console.log("Sign in response:", {
+        user: data.user?.email,
+        session: !!data.session,
+        error: error?.message,
+      })
 
       if (error) {
-        console.error("Login error:", error)
+        console.error("Sign in error:", error)
 
         let errorMessage = error.message
 
@@ -56,9 +61,10 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         if (error.message.includes("Invalid login credentials")) {
           errorMessage = "Invalid email or password. Please check your credentials and try again."
         } else if (error.message.includes("Email not confirmed")) {
-          // Show email verification modal instead of just an error
+          console.log("Email not confirmed, showing verification modal")
           setUserEmail(values.email)
           setShowEmailVerification(true)
+          setIsLoading(false)
           return
         } else if (error.message.includes("signup_disabled")) {
           errorMessage = "Account registration is currently disabled. Please contact support."
@@ -66,51 +72,25 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
         toast({
           variant: "destructive",
-          title: "Login failed",
+          title: "Sign in failed",
           description: errorMessage,
         })
+        setIsLoading(false)
         return
       }
 
-      if (!data.user) {
+      if (!data.user || !data.session) {
+        console.error("No user or session data received")
         toast({
           variant: "destructive",
-          title: "Login failed",
-          description: "No user data received. Please try again.",
+          title: "Sign in failed",
+          description: "Authentication failed. Please try again.",
         })
+        setIsLoading(false)
         return
       }
 
-      console.log("Login successful for user:", data.user.email)
-
-      // Check if user profile exists, create if it doesn't
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", data.user.id)
-          .single()
-
-        if (profileError && profileError.code === "PGRST116") {
-          // Profile doesn't exist, create it
-          console.log("Creating missing user profile...")
-          const { error: createError } = await supabase.from("users").insert([
-            {
-              id: data.user.id,
-              email: data.user.email!,
-              full_name: data.user.user_metadata?.full_name || "",
-            },
-          ])
-
-          if (createError) {
-            console.error("Error creating profile:", createError)
-          } else {
-            console.log("Profile created successfully")
-          }
-        }
-      } catch (profileErr) {
-        console.error("Profile check/creation error:", profileErr)
-      }
+      console.log("Sign in successful for user:", data.user.email)
 
       toast({
         title: "Welcome back!",
@@ -120,19 +100,24 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       // Reset form
       form.reset()
 
-      // Close the dialog
+      // Close the dialog first
       onSuccess()
 
-      // Refresh the page to update auth state
-      router.refresh()
+      // Wait a moment for the dialog to close, then refresh
+      setTimeout(() => {
+        router.refresh()
+        // Add a URL parameter to force header refresh
+        const url = new URL(window.location.href)
+        url.searchParams.set("refresh", Date.now().toString())
+        router.push(url.pathname + url.search)
+      }, 100)
     } catch (error) {
-      console.error("Unexpected login error:", error)
+      console.error("Unexpected sign in error:", error)
       toast({
         variant: "destructive",
-        title: "Login failed",
+        title: "Sign in failed",
         description: "An unexpected error occurred. Please try again.",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -148,7 +133,13 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="your.email@example.com" {...field} disabled={isLoading} />
+                  <Input
+                    placeholder="your.email@example.com"
+                    {...field}
+                    disabled={isLoading}
+                    type="email"
+                    autoComplete="email"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -161,7 +152,13 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    {...field}
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

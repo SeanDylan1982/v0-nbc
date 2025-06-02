@@ -9,18 +9,34 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Facebook, Mail, MapPin, Phone } from "lucide-react"
+import { createMessage } from "@/app/actions/messages"
+import { toast } from "sonner"
 
 export default function ContactSection() {
-  const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setFormState("submitting")
+    setIsSubmitting(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setFormState("success")
-    }, 1500)
+    const formData = new FormData(e.currentTarget)
+
+    try {
+      const result = await createMessage(formData)
+
+      if (result.success) {
+        toast.success("Your message has been sent successfully! We'll get back to you soon.")
+        // Reset form
+        e.currentTarget.reset()
+      } else {
+        toast.error(result.error || "Failed to send message. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error)
+      toast.error("An unexpected error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -41,37 +57,29 @@ export default function ContactSection() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first-name">First name</Label>
-                    <Input id="first-name" required />
+                    <Label htmlFor="first_name">First name</Label>
+                    <Input id="first_name" name="first_name" required disabled={isSubmitting} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last-name">Last name</Label>
-                    <Input id="last-name" required />
+                    <Label htmlFor="last_name">Last name</Label>
+                    <Input id="last_name" name="last_name" required disabled={isSubmitting} />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required />
+                  <Input id="email" name="email" type="email" required disabled={isSubmitting} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone (optional)</Label>
-                  <Input id="phone" type="tel" />
+                  <Input id="phone" name="phone" type="tel" disabled={isSubmitting} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="message">Message</Label>
-                  <Textarea id="message" rows={4} required />
+                  <Textarea id="message" name="message" rows={4} required disabled={isSubmitting} />
                 </div>
-                <Button type="submit" className="w-full" disabled={formState === "submitting"}>
-                  {formState === "submitting" ? "Sending..." : "Send Message"}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
-
-                {formState === "success" && (
-                  <p className="text-green-600 text-center">Your message has been sent successfully!</p>
-                )}
-
-                {formState === "error" && (
-                  <p className="text-red-600 text-center">There was an error sending your message. Please try again.</p>
-                )}
               </form>
             </CardContent>
           </Card>
