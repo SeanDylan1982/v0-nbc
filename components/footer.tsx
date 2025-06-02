@@ -52,6 +52,11 @@ export default function Footer() {
                   Contact Us
                 </Link>
               </li>
+              <li>
+                <Link href="/privacy-policy" className="hover:underline">
+                  Privacy Policy
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -71,6 +76,11 @@ export default function Footer() {
         </div>
         <div className="mt-8 pt-4 border-t text-center text-sm text-gray-500">
           <p>© {new Date().getFullYear()} Northmead Bowls Club. All rights reserved.</p>
+          <p className="mt-2">
+            <Link href="/privacy-policy" className="hover:underline">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </div>
     </footer>

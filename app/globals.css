@@ -4,60 +4,49 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --background: 152 76% 96%;              /* green-haze-50 */
+    --foreground: 165 71% 20%;              /* green-haze-800 */
+    --card: 152 76% 96%;
+    --card-foreground: 165 71% 20%;
+    --popover: 152 76% 96%;
+    --popover-foreground: 165 71% 20%;
+    --primary: 154 70% 40%;                 /* green-haze-500 */
+    --primary-foreground: 152 76% 96%;      /* green-haze-50 */
+    --secondary: 153 55% 67%;               /* green-haze-300 */
+    --secondary-foreground: 165 71% 20%;    /* green-haze-800 */
+    --muted: 153 57% 82%;                   /* green-haze-200 */
+    --muted-foreground: 167 69% 17%;        /* green-haze-900 */
+    --accent: 154 52% 52%;                  /* green-haze-400 */
+    --accent-foreground: 152 76% 96%;       /* green-haze-50 */
+    --destructive: 0 84.2% 60.2%;           /* unchanged */
+    --destructive-foreground: 0 0% 100%;    /* white */
+    --border: 153 57% 82%;                  /* green-haze-200 */
+    --input: 153 57% 82%;
+    --ring: 154 70% 40%;                    /* match --primary */
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 224.3 76.3% 48%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --background: 166 70% 10%;              /* green-haze-950 */
+    --foreground: 152 76% 96%;              /* green-haze-50 */
+    --card: 167 69% 17%;                    /* green-haze-900 */
+    --card-foreground: 152 76% 96%;
+    --popover: 167 69% 17%;
+    --popover-foreground: 152 76% 96%;
+    --primary: 154 70% 40%;                 /* green-haze-500 */
+    --primary-foreground: 152 76% 96%;
+    --secondary: 163 77% 25%;               /* green-haze-700 */
+    --secondary-foreground: 152 76% 96%;
+    --muted: 165 71% 20%;                   /* green-haze-800 */
+    --muted-foreground: 153 55% 67%;        /* green-haze-300 */
+    --accent: 154 52% 52%;                  /* green-haze-400 */
+    --accent-foreground: 152 76% 96%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 165 71% 20%;                  /* green-haze-800 */
+    --input: 165 71% 20%;
+    --ring: 154 70% 40%;
+    --radius: 0.5rem;
   }
 }
 

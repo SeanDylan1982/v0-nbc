@@ -19,78 +19,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Edit, FileText, Plus, Trash } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-// Mock data and types for documents since we don't have the actual implementation yet
-interface Document {
-  id: string
-  title: string
-  description: string
-  fileType: string
-  fileSize: string
-  category: string
-  downloadUrl: string
-  created_at?: string
-  updated_at?: string
-}
-
-interface NewDocument {
-  title: string
-  description: string
-  fileType: string
-  fileSize: string
-  category: string
-  downloadUrl: string
-}
-
-// Mock functions for document management
-const getDocuments = async (): Promise<Document[]> => {
-  // This would be replaced with an actual API call
-  return [
-    {
-      id: "1",
-      title: "Club Constitution",
-      description: "The official constitution of Northmead Bowls Club",
-      fileType: "PDF",
-      fileSize: "245 KB",
-      category: "club",
-      downloadUrl: "#",
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      title: "Membership Application Form",
-      description: "Form for new membership applications",
-      fileType: "PDF",
-      fileSize: "150 KB",
-      category: "membership",
-      downloadUrl: "#",
-      created_at: new Date().toISOString(),
-    },
-  ]
-}
-
-const createDocument = async (document: NewDocument): Promise<Document> => {
-  // This would be replaced with an actual API call
-  return {
-    ...document,
-    id: Math.random().toString(36).substring(2, 9),
-    created_at: new Date().toISOString(),
-  }
-}
-
-const updateDocument = async (id: string, document: Partial<Document>): Promise<Document> => {
-  // This would be replaced with an actual API call
-  return {
-    ...document,
-    id,
-    updated_at: new Date().toISOString(),
-  } as Document
-}
-
-const deleteDocument = async (id: string): Promise<{ success: boolean }> => {
-  // This would be replaced with an actual API call
-  return { success: true }
-}
+import {
+  getDocuments,
+  createDocument,
+  updateDocument,
+  deleteDocument,
+  uploadDocumentFile,
+  type Document,
+  type NewDocument,
+} from "@/app/actions/documents"
+import { createClientSupabaseClient } from "@/lib/supabase"
 
 export default function DocumentsAdminPage() {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -98,13 +36,12 @@ export default function DocumentsAdminPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [newDocument, setNewDocument] = useState<NewDocument>({
+  const [newDocument, setNewDocument] = useState<Omit<NewDocument, "file_path">>({
     title: "",
     description: "",
-    fileType: "PDF",
-    fileSize: "",
+    filetype: "PDF",
+    filesize: "",
     category: "club",
-    downloadUrl: "#",
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const { toast } = useToast()
@@ -134,27 +71,45 @@ export default function DocumentsAdminPage() {
     if (file) {
       setSelectedFile(file)
       // Update file type and size in the form
+      const fileExt = file.name.split(".").pop()?.toUpperCase() || "PDF"
+      const fileSizeKB = Math.round(file.size / 1024)
       setNewDocument({
         ...newDocument,
-        fileType: file.type.split("/")[1].toUpperCase(),
-        fileSize: `${Math.round(file.size / 1024)} KB`,
+        filetype: fileExt,
+        filesize: `${fileSizeKB} KB`,
       })
     }
   }
 
   const handleAddDocument = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setIsLoading(true)
-      // In a real implementation, you would upload the file here
-      const createdDocument = await createDocument(newDocument)
+
+      // Upload the file first
+      const { file_path } = await uploadDocumentFile(selectedFile)
+
+      // Then create the document record
+      const createdDocument = await createDocument({
+        ...newDocument,
+        file_path,
+      })
+
       setDocuments([createdDocument, ...documents])
       setNewDocument({
         title: "",
         description: "",
-        fileType: "PDF",
-        fileSize: "",
+        filetype: "PDF",
+        filesize: "",
         category: "club",
-        downloadUrl: "#",
       })
       setSelectedFile(null)
       setIsAddDialogOpen(false)
@@ -184,9 +139,17 @@ export default function DocumentsAdminPage() {
 
     try {
       setIsLoading(true)
+
+      // Handle file upload if a new file is selected
+      if (selectedFile) {
+        const { file_path } = await uploadDocumentFile(selectedFile)
+        selectedDocument.file_path = file_path
+      }
+
       const updatedDocument = await updateDocument(selectedDocument.id, selectedDocument)
       setDocuments(documents.map((doc) => (doc.id === updatedDocument.id ? updatedDocument : doc)))
       setIsEditDialogOpen(false)
+      setSelectedFile(null)
       toast({
         title: "Success",
         description: "Document updated successfully!",
@@ -223,6 +186,17 @@ export default function DocumentsAdminPage() {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const getDownloadUrl = (filePath: string) => {
+    try {
+      const supabase = createClientSupabaseClient()
+      const { data } = supabase.storage.from("documents").getPublicUrl(filePath)
+      return data.publicUrl
+    } catch (error) {
+      console.error("Error getting download URL:", error)
+      return "#"
     }
   }
 
@@ -285,20 +259,20 @@ export default function DocumentsAdminPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="fileType">File Type</Label>
+                  <Label htmlFor="filetype">File Type</Label>
                   <Input
-                    id="fileType"
-                    value={newDocument.fileType}
-                    onChange={(e) => setNewDocument({ ...newDocument, fileType: e.target.value })}
+                    id="filetype"
+                    value={newDocument.filetype}
+                    onChange={(e) => setNewDocument({ ...newDocument, filetype: e.target.value })}
                     disabled={!!selectedFile}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="fileSize">File Size</Label>
+                  <Label htmlFor="filesize">File Size</Label>
                   <Input
-                    id="fileSize"
-                    value={newDocument.fileSize}
-                    onChange={(e) => setNewDocument({ ...newDocument, fileSize: e.target.value })}
+                    id="filesize"
+                    value={newDocument.filesize}
+                    onChange={(e) => setNewDocument({ ...newDocument, filesize: e.target.value })}
                     disabled={!!selectedFile}
                     placeholder="e.g., 245 KB"
                   />
@@ -317,7 +291,7 @@ export default function DocumentsAdminPage() {
         </Dialog>
       </div>
 
-      {isLoading && <p>Loading documents...</p>}
+      {isLoading && documents.length === 0 && <p>Loading documents...</p>}
 
       <div className="grid gap-4">
         {documents.map((document) => (
@@ -333,9 +307,9 @@ export default function DocumentsAdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <span>{document.fileType}</span>
+                    <span>{document.filetype}</span>
                     <span>•</span>
-                    <span>{document.fileSize}</span>
+                    <span>{document.filesize}</span>
                   </div>
                   <div className="flex gap-2 ml-4">
                     <Button
@@ -373,7 +347,12 @@ export default function DocumentsAdminPage() {
                 >
                   {document.category.charAt(0).toUpperCase() + document.category.slice(1)}
                 </span>
-                <a href={document.downloadUrl} className="flex items-center gap-2 text-primary hover:underline">
+                <a
+                  href={getDownloadUrl(document.file_path)}
+                  className="flex items-center gap-2 text-primary hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Download className="h-4 w-4" />
                   Download
                 </a>
@@ -394,7 +373,7 @@ export default function DocumentsAdminPage() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-file">Replace File (Optional)</Label>
-                <Input id="edit-file" type="file" />
+                <Input id="edit-file" type="file" onChange={handleFileChange} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-title">Document Title</Label>
@@ -431,19 +410,21 @@ export default function DocumentsAdminPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-fileType">File Type</Label>
+                  <Label htmlFor="edit-filetype">File Type</Label>
                   <Input
-                    id="edit-fileType"
-                    value={selectedDocument.fileType}
-                    onChange={(e) => setSelectedDocument({ ...selectedDocument, fileType: e.target.value })}
+                    id="edit-filetype"
+                    value={selectedDocument.filetype}
+                    onChange={(e) => setSelectedDocument({ ...selectedDocument, filetype: e.target.value })}
+                    disabled={!!selectedFile}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-fileSize">File Size</Label>
+                  <Label htmlFor="edit-filesize">File Size</Label>
                   <Input
-                    id="edit-fileSize"
-                    value={selectedDocument.fileSize}
-                    onChange={(e) => setSelectedDocument({ ...selectedDocument, fileSize: e.target.value })}
+                    id="edit-filesize"
+                    value={selectedDocument.filesize}
+                    onChange={(e) => setSelectedDocument({ ...selectedDocument, filesize: e.target.value })}
+                    disabled={!!selectedFile}
                   />
                 </div>
               </div>
