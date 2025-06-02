@@ -5,20 +5,7 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import {
-  Calendar,
-  FileText,
-  Home,
-  ImageIcon,
-  LogOut,
-  Menu,
-  MessageSquare,
-  Settings,
-  Trophy,
-  Users,
-  Upload,
-  Shield,
-} from "lucide-react"
+import { Calendar, FileText, Home, ImageIcon, LogOut, Menu, MessageSquare, Trophy, Upload, Shield } from "lucide-react"
 
 export default function DashboardLayout({
   children,
@@ -35,10 +22,8 @@ export default function DashboardLayout({
     { name: "Gallery", href: "/admin/dashboard/gallery", icon: ImageIcon },
     { name: "Import Images", href: "/admin/dashboard/import-images", icon: Upload },
     { name: "Documents", href: "/admin/dashboard/documents", icon: FileText },
-    { name: "Members", href: "/admin/dashboard/members", icon: Users },
     { name: "Messages", href: "/admin/dashboard/messages", icon: MessageSquare },
     { name: "Admin Users", href: "/admin/dashboard/admin-users", icon: Shield },
-    { name: "Settings", href: "/admin/dashboard/settings", icon: Settings },
   ]
 
   return (

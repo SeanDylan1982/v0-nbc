@@ -137,22 +137,31 @@ export async function uploadDocumentFile(file: File) {
   const supabase = createServerSupabaseClient()
 
   try {
+    console.log("Starting document upload for file:", file.name)
+
     // Create a unique file name
     const fileExt = file.name.split(".").pop()
     const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
     const filePath = `${fileName}`
 
+    console.log("Uploading to path:", filePath)
+
     // Upload the file
     const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file)
 
     if (uploadError) {
+      console.error("Upload error:", uploadError)
       throw new Error(`Error uploading document file: ${uploadError.message}`)
     }
+
+    console.log("Upload successful, getting public URL")
 
     // Get the public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("documents").getPublicUrl(filePath)
+
+    console.log("Public URL generated:", publicUrl)
 
     return {
       file_path: filePath,

@@ -181,81 +181,155 @@ export default function AboutSection() {
         </TabsContent>
 
         <TabsContent value="committee" className="mt-6">
-          <div className="space-y-6">
+          <div className="space-y-8">
             <h3 className="text-xl font-bold">Current Committee (2025)</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <CommitteeMemberCard
-                name="John Smith"
-                position="President"
-                image="/placeholder.svg?height=200&width=200"
-                contact="president@northmeadbowls.co.za"
-                phone="082 123 4567"
-              />
+            {/* Executive Committee */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-primary">Executive Committee</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CommitteeMemberCard
+                  name="Merle Wiemers"
+                  position="President"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="president@northmeadbowls.co.za"
+                  phone="011 421 1234"
+                />
 
-              <CommitteeMemberCard
-                name="Mary Johnson"
-                position="Vice President"
-                image="/placeholder.svg?height=200&width=200"
-                contact="vicepresident@northmeadbowls.co.za"
-                phone="083 234 5678"
-              />
+                <CommitteeMemberCard
+                  name="Position Vacant"
+                  position="Vice President"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="vicepresident@northmeadbowls.co.za"
+                  phone=""
+                />
 
-              <CommitteeMemberCard
-                name="David Brown"
-                position="Secretary"
-                image="/placeholder.svg?height=200&width=200"
-                contact="secretary@northmeadbowls.co.za"
-                phone="084 345 6789"
-              />
+                <CommitteeMemberCard
+                  name="Lloyd Cameron"
+                  position="Chairman"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="chairman@northmeadbowls.co.za"
+                  phone="011 421 2345"
+                />
 
-              <CommitteeMemberCard
-                name="Sarah Wilson"
-                position="Treasurer"
-                image="/placeholder.svg?height=200&width=200"
-                contact="treasurer@northmeadbowls.co.za"
-                phone="085 456 7890"
-              />
+                <CommitteeMemberCard
+                  name="Andy Pawlett"
+                  position="Vice Chairman"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="vicechairman@northmeadbowls.co.za"
+                  phone="011 421 3456"
+                />
 
-              <CommitteeMemberCard
-                name="Michael Davis"
-                position="Club Captain (Men)"
-                image="/placeholder.svg?height=200&width=200"
-                contact="mencaptain@northmeadbowls.co.za"
-                phone="086 567 8901"
-              />
+                <CommitteeMemberCard
+                  name="Lloyd Cameron & Andy Pawlett"
+                  position="Treasurer"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="treasurer@northmeadbowls.co.za"
+                  phone="011 421 2345"
+                />
 
-              <CommitteeMemberCard
-                name="Elizabeth Taylor"
-                position="Club Captain (Women)"
-                image="/placeholder.svg?height=200&width=200"
-                contact="womencaptain@northmeadbowls.co.za"
-                phone="087 678 9012"
-              />
+                <CommitteeMemberCard
+                  name="Stephanie Hill"
+                  position="Secretary"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="secretary@northmeadbowls.co.za"
+                  phone="011 421 4567"
+                />
 
-              <CommitteeMemberCard
-                name="Robert Johnson"
-                position="Greens Manager"
-                image="/placeholder.svg?height=200&width=200"
-                contact="greens@northmeadbowls.co.za"
-                phone="088 789 0123"
-              />
+                <CommitteeMemberCard
+                  name="Rodney Winnan"
+                  position="Competition Secretary"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="competitions@northmeadbowls.co.za"
+                  phone="011 421 5678"
+                />
+              </div>
+            </div>
 
-              <CommitteeMemberCard
-                name="Emma Thompson"
-                position="Social Coordinator"
-                image="/placeholder.svg?height=200&width=200"
-                contact="social@northmeadbowls.co.za"
-                phone="089 890 1234"
-              />
+            {/* General Committee */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-primary">General Committee</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CommitteeMemberCard
+                  name="Robin Cramer"
+                  position="General Committee"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="general@northmeadbowls.co.za"
+                  phone="011 421 6789"
+                />
 
-              <CommitteeMemberCard
-                name="James Wilson"
-                position="Bar Manager"
-                image="/placeholder.svg?height=200&width=200"
-                contact="bar@northmeadbowls.co.za"
-                phone="080 901 2345"
-              />
+                <CommitteeMemberCard
+                  name="Ryno Breedt"
+                  position="General Committee"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="general@northmeadbowls.co.za"
+                  phone="011 421 7890"
+                />
+
+                <CommitteeMemberCard
+                  name="Andy Pawlett"
+                  position="General Committee"
+                  image="/placeholder.svg?height=200&width=200"
+                  contact="general@northmeadbowls.co.za"
+                  phone="011 421 3456"
+                />
+              </div>
+            </div>
+
+            {/* Selection Committees */}
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Men's Selection Committee</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    <li className="flex justify-between">
+                      <span>C Rodwell</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>J Waugh</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>L Cameron</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>E Brown</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>R Winnan</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Ladies' Selection Committee</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    <li className="flex justify-between">
+                      <span>M Cousins</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>E Fritz</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>M Lowery</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>M Wiemers</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>S Hartle</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>M Cameron</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
@@ -283,7 +357,7 @@ function CommitteeMemberCard({ name, position, image, contact, phone }: Committe
           <h4 className="font-bold text-lg">{name}</h4>
           <p className="text-primary font-medium mb-2">{position}</p>
           <p className="text-sm text-muted-foreground">{contact}</p>
-          <p className="text-sm text-muted-foreground">{phone}</p>
+          {phone && <p className="text-sm text-muted-foreground">{phone}</p>}
         </div>
       </CardContent>
     </Card>
