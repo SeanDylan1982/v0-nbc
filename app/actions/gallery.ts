@@ -8,13 +8,24 @@ export type GalleryImage = {
   title: string
   alt: string
   description: string
-  category: string
+  category?: string
+  album_id?: string
   storage_path: string
   created_at?: string
   updated_at?: string
 }
 
+export type Album = {
+  id: string
+  title: string
+  description: string
+  cover_image?: string
+  created_at?: string
+  updated_at?: string
+}
+
 export type NewGalleryImage = Omit<GalleryImage, "id" | "created_at" | "updated_at">
+export type NewAlbum = Omit<Album, "id" | "created_at" | "updated_at">
 
 // Get all gallery images
 export async function getGalleryImages() {
@@ -30,7 +41,25 @@ export async function getGalleryImages() {
   return data as GalleryImage[]
 }
 
-// Get gallery images by category
+// Get gallery images by album
+export async function getGalleryImagesByAlbum(albumId: string) {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase
+    .from("gallery_images")
+    .select("*")
+    .eq("album_id", albumId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching gallery images by album:", error)
+    throw new Error("Failed to fetch gallery images by album")
+  }
+
+  return data as GalleryImage[]
+}
+
+// Get gallery images by category (legacy support)
 export async function getGalleryImagesByCategory(category: string) {
   const supabase = createServerSupabaseClient()
 
@@ -62,6 +91,119 @@ export async function getGalleryImageById(id: string) {
   return data as GalleryImage
 }
 
+// Get all albums
+export async function getAlbums() {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase.from("albums").select("*").order("title", { ascending: true })
+
+  if (error) {
+    console.error("Error fetching albums:", error)
+    throw new Error("Failed to fetch albums")
+  }
+
+  return data as Album[]
+}
+
+// Get album by ID
+export async function getAlbumById(id: string) {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase.from("albums").select("*").eq("id", id).single()
+
+  if (error) {
+    console.error("Error fetching album:", error)
+    throw new Error("Failed to fetch album")
+  }
+
+  return data as Album
+}
+
+// Create a new album
+export async function createAlbum(album: NewAlbum) {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase.from("albums").insert([album]).select()
+
+  if (error) {
+    console.error("Error creating album:", error)
+    throw new Error("Failed to create album")
+  }
+
+  revalidatePath("/admin/dashboard/gallery")
+  revalidatePath("/")
+
+  return data[0] as Album
+}
+
+// Update an album
+export async function updateAlbum(id: string, updates: Partial<Album>) {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase
+    .from("albums")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+
+  if (error) {
+    console.error("Error updating album:", error)
+    throw new Error("Failed to update album")
+  }
+
+  revalidatePath("/admin/dashboard/gallery")
+  revalidatePath("/")
+
+  return data[0] as Album
+}
+
+// Delete an album
+export async function deleteAlbum(id: string) {
+  const supabase = createServerSupabaseClient()
+
+  // First update all images in this album to have no album
+  const { error: updateError } = await supabase.from("gallery_images").update({ album_id: null }).eq("album_id", id)
+
+  if (updateError) {
+    console.error("Error updating gallery images for album deletion:", updateError)
+    throw new Error("Failed to update gallery images for album deletion")
+  }
+
+  // Then delete the album
+  const { error: deleteError } = await supabase.from("albums").delete().eq("id", id)
+
+  if (deleteError) {
+    console.error("Error deleting album:", deleteError)
+    throw new Error("Failed to delete album")
+  }
+
+  revalidatePath("/admin/dashboard/gallery")
+  revalidatePath("/")
+
+  return { success: true }
+}
+
+// Set album cover image
+export async function setAlbumCoverImage(albumId: string, imageStoragePath: string) {
+  const supabase = createServerSupabaseClient()
+
+  const { data, error } = await supabase
+    .from("albums")
+    .update({ cover_image: imageStoragePath, updated_at: new Date().toISOString() })
+    .eq("id", albumId)
+    .select()
+
+  if (error) {
+    console.error("Error setting album cover image:", error)
+    throw new Error("Failed to set album cover image")
+  }
+
+  revalidatePath("/admin/dashboard/gallery")
+  revalidatePath("/")
+
+  return data[0] as Album
+}
+
 // Upload an image to Supabase Storage and create a gallery image record
 export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryImage, "storage_path">) {
   const supabase = createServerSupabaseClient()
@@ -69,7 +211,7 @@ export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryIm
   // Create a unique filename
   const fileExt = file.name.split(".").pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-  const filePath = `gallery/${metadata.category}/${fileName}`
+  const filePath = `gallery/${metadata.album_id || "uncategorized"}/${fileName}`
 
   // Upload the file to Supabase Storage
   const { error: uploadError } = await supabase.storage.from("images").upload(filePath, file)
