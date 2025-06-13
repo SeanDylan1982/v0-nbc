@@ -131,7 +131,9 @@ export default function GalleryAdminPage() {
       return
     }
 
-    if (!newImage.album_id) {
+    // Ensure album_id is set from the selected album
+    const albumId = selectedAlbum?.id
+    if (!albumId) {
       toast({
         title: "No album selected",
         description: "Please select an album for this image.",
@@ -142,10 +144,19 @@ export default function GalleryAdminPage() {
 
     try {
       setIsLoading(true)
-      const result = await uploadGalleryImage(selectedFile, newImage)
+
+      // Set the album_id explicitly
+      const imageData = {
+        ...newImage,
+        album_id: albumId,
+      }
+
+      console.log("Uploading image with data:", imageData)
+      const result = await uploadGalleryImage(selectedFile, imageData)
+      console.log("Upload result:", result)
 
       // If we're currently viewing the album this image was added to, update the images list
-      if (selectedAlbum && selectedAlbum.id === newImage.album_id) {
+      if (selectedAlbum && selectedAlbum.id === albumId) {
         setImages([{ ...result, url: result.publicUrl }, ...images])
       }
 
@@ -153,7 +164,7 @@ export default function GalleryAdminPage() {
         title: "",
         alt: "",
         description: "",
-        album_id: selectedAlbum ? selectedAlbum.id : "",
+        album_id: albumId,
       })
       setSelectedFile(null)
       setIsAddDialogOpen(false)
@@ -165,7 +176,7 @@ export default function GalleryAdminPage() {
       console.error("Failed to upload image:", error)
       toast({
         title: "Error",
-        description: "Failed to upload image. Please try again.",
+        description: `Failed to upload image: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       })
     } finally {
@@ -373,6 +384,18 @@ export default function GalleryAdminPage() {
     setActiveTab("albums")
   }
 
+  // Reset the new image form when opening the dialog
+  const handleOpenAddImageDialog = () => {
+    setNewImage({
+      title: "",
+      alt: "",
+      description: "",
+      album_id: selectedAlbum?.id || "",
+    })
+    setSelectedFile(null)
+    setIsAddDialogOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -429,7 +452,11 @@ export default function GalleryAdminPage() {
             </Button>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="flex items-center gap-2" disabled={isLoading || !selectedAlbum}>
+                <Button
+                  className="flex items-center gap-2"
+                  disabled={isLoading || !selectedAlbum}
+                  onClick={handleOpenAddImageDialog}
+                >
                   <Plus className="h-4 w-4" />
                   Add Image
                 </Button>
@@ -467,11 +494,9 @@ export default function GalleryAdminPage() {
                       rows={3}
                     />
                   </div>
-                  <input
-                    type="hidden"
-                    value={selectedAlbum?.id || ""}
-                    onChange={(e) => setNewImage({ ...newImage, album_id: e.target.value })}
-                  />
+                  <div className="text-sm text-muted-foreground">
+                    Uploading to album: <span className="font-medium">{selectedAlbum?.title}</span>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>

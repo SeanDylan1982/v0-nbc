@@ -3,10 +3,8 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface UploadHelperProps {
@@ -16,7 +14,6 @@ interface UploadHelperProps {
 }
 
 export function UploadHelper({ onFileSelected, accept = "image/*", maxSizeMB = 5 }: UploadHelperProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -42,28 +39,15 @@ export function UploadHelper({ onFileSelected, accept = "image/*", maxSizeMB = 5
     }
     reader.readAsDataURL(file)
 
-    setSelectedFile(file)
-  }
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      onFileSelected(selectedFile)
-      setSelectedFile(null)
-      setPreview(null)
-    }
+    // Pass the file to the parent component
+    onFileSelected(file)
   }
 
   return (
     <div className="space-y-4">
       <div className="grid gap-2">
-        <Label htmlFor="image-upload">Upload Image</Label>
-        <div className="flex items-center gap-2">
-          <Input id="image-upload" type="file" accept={accept} onChange={handleFileChange} />
-          <Button size="sm" className="flex items-center gap-1" onClick={handleUpload} disabled={!selectedFile}>
-            <Upload className="h-4 w-4" />
-            Upload
-          </Button>
-        </div>
+        <Label htmlFor="image-upload">Select Image</Label>
+        <Input id="image-upload" type="file" accept={accept} onChange={handleFileChange} />
       </div>
 
       {preview && (
