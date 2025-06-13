@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, FileText, ImageIcon, Trophy, Upload } from "lucide-react"
+import { Calendar, FileText, ImageIcon, Trophy, Upload, Spade } from "lucide-react"
 
 export default function AdminDashboardPage() {
   return (
@@ -38,6 +38,12 @@ export default function AdminDashboardPage() {
                 </Link>
               </Button>
               <Button asChild className="h-20 flex flex-col gap-1">
+                <Link href="/admin/dashboard/joker-draw">
+                  <Spade className="h-5 w-5 mb-1" />
+                  <span>Update Joker Draw</span>
+                </Link>
+              </Button>
+              <Button asChild className="h-20 flex flex-col gap-1">
                 <Link href="/admin/dashboard/documents">
                   <FileText className="h-5 w-5 mb-1" />
                   <span>Manage Documents</span>
@@ -61,6 +67,11 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="border-b pb-2">
+                <p className="font-medium">Joker Draw Updated</p>
+                <p className="text-sm text-muted-foreground">Updated jackpot amount to R12,500</p>
+                <p className="text-xs text-muted-foreground">1 hour ago by Admin</p>
+              </div>
+              <div className="border-b pb-2">
                 <p className="font-medium">Gallery Updated</p>
                 <p className="text-sm text-muted-foreground">Added 5 new photos from the Club Championships</p>
                 <p className="text-xs text-muted-foreground">2 hours ago by Admin</p>
@@ -70,15 +81,10 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground">Added "Annual General Meeting" to the events calendar</p>
                 <p className="text-xs text-muted-foreground">Yesterday by Admin</p>
               </div>
-              <div className="border-b pb-2">
+              <div>
                 <p className="font-medium">Results Updated</p>
                 <p className="text-sm text-muted-foreground">Updated results for the Veterans Tournament</p>
                 <p className="text-xs text-muted-foreground">2 days ago by Admin</p>
-              </div>
-              <div>
-                <p className="font-medium">New Member Added</p>
-                <p className="text-sm text-muted-foreground">Added new member "James Wilson" to the database</p>
-                <p className="text-xs text-muted-foreground">3 days ago by Admin</p>
               </div>
             </div>
           </CardContent>

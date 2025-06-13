@@ -71,9 +71,6 @@ export default function Header() {
             <>
               {user ? (
                 <>
-                  <Link href="/members" className="text-sm font-medium hover:underline">
-                    Members Area
-                  </Link>
                   <UserNav user={user} />
                 </>
               ) : (
@@ -81,9 +78,6 @@ export default function Header() {
               )}
             </>
           )}
-          <Link href="/admin" className="text-sm font-medium hover:underline">
-            Admin Login
-          </Link>
           <ModeToggle />
         </nav>
         <div className="flex md:hidden items-center gap-4">
@@ -97,18 +91,6 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="flex flex-col gap-4 mt-8">
-                {!loading && user && (
-                  <Link
-                    href="/members"
-                    className="text-sm font-medium hover:underline"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Members Area
-                  </Link>
-                )}
-                <Link href="/admin" className="text-sm font-medium hover:underline" onClick={() => setIsOpen(false)}>
-                  Admin Login
-                </Link>
                 {!loading && (
                   <>
                     {user ? (

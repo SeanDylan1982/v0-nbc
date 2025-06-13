@@ -5,7 +5,19 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Calendar, FileText, Home, ImageIcon, LogOut, Menu, MessageSquare, Trophy, Upload, Shield } from "lucide-react"
+import {
+  Calendar,
+  FileText,
+  Home,
+  ImageIcon,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Trophy,
+  Upload,
+  Shield,
+  Spade,
+} from "lucide-react"
 
 export default function DashboardLayout({
   children,
@@ -19,6 +31,7 @@ export default function DashboardLayout({
     { name: "Events", href: "/admin/dashboard/events", icon: Calendar },
     { name: "Competitions", href: "/admin/dashboard/competitions", icon: Trophy },
     { name: "Results", href: "/admin/dashboard/results", icon: FileText },
+    { name: "Joker Draw", href: "/admin/dashboard/joker-draw", icon: Spade },
     { name: "Gallery", href: "/admin/dashboard/gallery", icon: ImageIcon },
     { name: "Import Images", href: "/admin/dashboard/import-images", icon: Upload },
     { name: "Documents", href: "/admin/dashboard/documents", icon: FileText },

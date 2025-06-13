@@ -22,8 +22,8 @@ export default function AboutSection() {
             <div>
               <div className="relative h-64 rounded-lg overflow-hidden mb-6">
                 <Image
-                  src="/placeholder.svg?height=300&width=500"
-                  alt="Northmead Bowls Club"
+                  src="/images/club/nbc.png"
+                  alt="Northmead Bowls Club building and green"
                   fill
                   className="object-cover"
                 />
@@ -170,10 +170,10 @@ export default function AboutSection() {
 
               <div className="relative h-64 rounded-lg overflow-hidden">
                 <Image
-                  src="/placeholder.svg?height=300&width=500"
-                  alt="Historical photo of Northmead Bowls Club"
+                  src="/images/club/history.jpg"
+                  alt="Distinguished club member in formal club blazer and tie"
                   fill
-                  className="object-cover"
+                  className="object-cover object-center"
                 />
               </div>
             </div>
@@ -194,14 +194,6 @@ export default function AboutSection() {
                   image="/placeholder.svg?height=200&width=200"
                   contact="president@northmeadbowls.co.za"
                   phone="011 421 1234"
-                />
-
-                <CommitteeMemberCard
-                  name="Position Vacant"
-                  position="Vice President"
-                  image="/placeholder.svg?height=200&width=200"
-                  contact="vicepresident@northmeadbowls.co.za"
-                  phone=""
                 />
 
                 <CommitteeMemberCard
@@ -243,6 +235,16 @@ export default function AboutSection() {
                   contact="competitions@northmeadbowls.co.za"
                   phone="011 421 5678"
                 />
+              </div>
+
+              <div className="mt-4 text-center text-muted-foreground">
+                <p>Vice President position is currently vacant.</p>
+                <p>
+                  Contact:{" "}
+                  <a href="mailto:vicepresident@northmeadbowls.co.za" className="text-primary hover:underline">
+                    vicepresident@northmeadbowls.co.za
+                  </a>
+                </p>
               </div>
             </div>
 

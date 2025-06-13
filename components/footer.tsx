@@ -80,6 +80,10 @@ export default function Footer() {
             <Link href="/privacy-policy" className="hover:underline">
               Privacy Policy
             </Link>
+            {" · "}
+            <Link href="/admin" className="hover:underline">
+              Admin Login
+            </Link>
           </p>
         </div>
       </div>

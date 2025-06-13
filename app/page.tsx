@@ -1,20 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Home, Calendar, Trophy, ImageIcon, FileText, Users, Info, Phone } from "lucide-react"
+import { Home, Calendar, Trophy, ImageIcon, FileText, Users, Info, Phone, Spade } from "lucide-react"
 import HomeSection from "@/components/sections/home-section"
 import EventsSection from "@/components/sections/events-section"
 import CompetitionsSection from "@/components/sections/competitions-section"
-import ResultsSection from "@/components/sections/results-section"
 import GallerySection from "@/components/sections/gallery-section"
 import DocumentsSection from "@/components/sections/documents-section"
 import MembersSection from "@/components/sections/members-section"
 import AboutSection from "@/components/sections/about-section"
 import ContactSection from "@/components/sections/contact-section"
+import JokerDrawSection from "@/components/sections/joker-draw-section"
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState("home")
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const [activeTab, setActiveTab] = useState(tabParam || "home")
+
+  // Listen for custom tab change events
+  useEffect(() => {
+    const handleTabChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      if (customEvent.detail && customEvent.detail.tab) {
+        setActiveTab(customEvent.detail.tab)
+      }
+    }
+
+    window.addEventListener("changeTab", handleTabChange as EventListener)
+
+    return () => {
+      window.removeEventListener("changeTab", handleTabChange as EventListener)
+    }
+  }, [])
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -32,9 +58,9 @@ export default function HomePage() {
             <Trophy className="h-4 w-4" />
             <span className="text-xs">Competitions</span>
           </TabsTrigger>
-          <TabsTrigger value="results" className="flex flex-col items-center gap-1 py-2">
-            <FileText className="h-4 w-4" />
-            <span className="text-xs">Results</span>
+          <TabsTrigger value="joker-draw" className="flex flex-col items-center gap-1 py-2">
+            <Spade className="h-4 w-4" />
+            <span className="text-xs">Joker Draw</span>
           </TabsTrigger>
           <TabsTrigger value="gallery" className="flex flex-col items-center gap-1 py-2">
             <ImageIcon className="h-4 w-4" />
@@ -67,8 +93,8 @@ export default function HomePage() {
           <TabsContent value="competitions">
             <CompetitionsSection />
           </TabsContent>
-          <TabsContent value="results">
-            <ResultsSection />
+          <TabsContent value="joker-draw">
+            <JokerDrawSection />
           </TabsContent>
           <TabsContent value="gallery">
             <GallerySection />

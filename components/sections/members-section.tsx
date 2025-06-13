@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,6 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Check } from "lucide-react"
 
 export default function MembersSection() {
+  const handleBookSession = () => {
+    // Create and dispatch a custom event to change the tab
+    const event = new CustomEvent("changeTab", {
+      detail: { tab: "contact" },
+    })
+    window.dispatchEvent(event)
+
+    // Add a small delay to ensure the tab changes before trying to pre-fill the form
+    setTimeout(() => {
+      const messageField = document.getElementById("message") as HTMLTextAreaElement
+      if (messageField) {
+        messageField.value =
+          "I would like to book an introduction session to try bowls. Please contact me with available dates and times."
+        messageField.focus()
+      }
+    }, 300)
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -189,8 +209,8 @@ export default function MembersSection() {
 
               <div className="relative h-48 rounded-lg overflow-hidden mb-6">
                 <Image
-                  src="/placeholder.svg?height=200&width=400"
-                  alt="Club members socializing"
+                  src="/images/club/community.jpg"
+                  alt="Club members in blue and white uniforms gathered around the bowling green"
                   fill
                   className="object-cover"
                 />
@@ -290,7 +310,9 @@ export default function MembersSection() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full">Book an Introduction Session</Button>
+                  <Button className="w-full" onClick={handleBookSession}>
+                    Book an Introduction Session
+                  </Button>
                 </CardFooter>
               </Card>
 

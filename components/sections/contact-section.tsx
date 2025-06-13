@@ -62,7 +62,7 @@ export default function ContactSection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div id="contact" className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold mb-2">Contact Us</h2>
         <p className="text-muted-foreground">Get in touch with Northmead Bowls Club</p>

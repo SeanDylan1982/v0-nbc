@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Clock, ImageIcon, MapPin, AlertCircle } from "lucide-react"
 import { type Event, getEvents, getImageUrl } from "@/app/actions/events"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { EventModal } from "@/components/events/event-modal"
 
 export default function EventsSection() {
   const [events, setEvents] = useState<(Event & { imageUrl?: string })[]>([])
@@ -137,61 +138,79 @@ interface EventCardProps {
 }
 
 function EventCard({ title, date, time, location, description, category, imageUrl }: EventCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const categoryColors = {
     competitions: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
     social: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
     joker: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
   }
 
+  // Truncate description for card view
+  const truncatedDescription = description.length > 100 ? `${description.substring(0, 100)}...` : description
+
   return (
-    <Card>
-      <div className="flex flex-col md:flex-row">
-        <div className="md:w-1/3 relative">
-          {imageUrl ? (
-            <div className="relative h-48 md:h-full">
-              <Image
-                src={imageUrl || "/placeholder.svg"}
-                alt={title}
-                fill
-                className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-48 md:h-full bg-muted rounded-t-lg md:rounded-l-lg md:rounded-t-none">
-              <ImageIcon className="h-12 w-12 text-muted-foreground" />
-            </div>
-          )}
-        </div>
-        <div className="md:w-2/3">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription className="mt-1">
-                  <div className="flex items-center gap-1 mt-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>{date}</span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{time}</span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{location}</span>
-                  </div>
-                </CardDescription>
+    <>
+      <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => setIsModalOpen(true)}>
+        <div className="flex flex-col md:flex-row">
+          <div className="md:w-1/3 relative">
+            {imageUrl ? (
+              <div className="relative h-48 md:h-full">
+                <Image
+                  src={imageUrl || "/placeholder.svg"}
+                  alt={title}
+                  fill
+                  className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                />
               </div>
-              <span className={`px-2 py-1 rounded-full text-xs ${categoryColors[category]}`}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p>{description}</p>
-          </CardContent>
+            ) : (
+              <div className="flex items-center justify-center h-48 md:h-full bg-muted rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+                <ImageIcon className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <div className="md:w-2/3">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{title}</CardTitle>
+                  <CardDescription className="mt-1">
+                    <div className="flex items-center gap-1 mt-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>{date}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{time}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>{location}</span>
+                    </div>
+                  </CardDescription>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs ${categoryColors[category]}`}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p>{truncatedDescription}</p>
+            </CardContent>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      <EventModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={title}
+        date={date}
+        time={time}
+        location={location}
+        description={description}
+        category={category}
+        imageUrl={imageUrl}
+      />
+    </>
   )
 }
