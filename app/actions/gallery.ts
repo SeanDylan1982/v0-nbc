@@ -8,7 +8,7 @@ export type GalleryImage = {
   title: string
   alt: string
   description: string
-  category?: string
+  category: string // Still required in the database
   album_id?: string
   storage_path: string
   created_at?: string
@@ -205,7 +205,7 @@ export async function setAlbumCoverImage(albumId: string, imageStoragePath: stri
 }
 
 // Upload an image to Supabase Storage and create a gallery image record
-export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryImage, "storage_path">) {
+export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryImage, "storage_path" | "category">) {
   const supabase = createServerSupabaseClient()
 
   // Create a unique filename
@@ -226,12 +226,22 @@ export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryIm
     data: { publicUrl },
   } = supabase.storage.from("images").getPublicUrl(filePath)
 
+  // Get the album to use its title as the category
+  let categoryName = "album"
+  if (metadata.album_id) {
+    const { data: album } = await supabase.from("albums").select("title").eq("id", metadata.album_id).single()
+    if (album) {
+      categoryName = album.title
+    }
+  }
+
   // Create a record in the gallery_images table
   const { data, error } = await supabase
     .from("gallery_images")
     .insert([
       {
         ...metadata,
+        category: categoryName, // Use the album title as the category
         storage_path: filePath,
       },
     ])
@@ -241,7 +251,7 @@ export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryIm
     console.error("Error creating gallery image record:", error)
     // Delete the uploaded file if the record creation fails
     await supabase.storage.from("images").remove([filePath])
-    throw new Error("Failed to create gallery image record")
+    throw new Error(`Failed to create gallery image record: ${error.message}`)
   }
 
   revalidatePath("/admin/dashboard/gallery")
@@ -253,6 +263,16 @@ export async function uploadGalleryImage(file: File, metadata: Omit<NewGalleryIm
 // Update an existing gallery image
 export async function updateGalleryImage(id: string, updates: Partial<GalleryImage>) {
   const supabase = createServerSupabaseClient()
+
+  // If album_id is being updated but category isn't, update the category based on the album
+  if (updates.album_id && !updates.category) {
+    const { data: album } = await supabase.from("albums").select("title").eq("id", updates.album_id).single()
+    if (album) {
+      updates.category = album.title
+    } else {
+      updates.category = "album"
+    }
+  }
 
   const { data, error } = await supabase
     .from("gallery_images")
