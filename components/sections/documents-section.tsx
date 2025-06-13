@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { createClientSupabaseClient } from "@/lib/supabase"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Tabs as ViewerTabs, TabsList as ViewerTabsList, TabsTrigger as ViewerTabsTrigger } from "@/components/ui/tabs"
 
 export default function DocumentsSection() {
   const [clubDocuments, setClubDocuments] = useState<Document[]>([])
@@ -262,7 +261,6 @@ interface DocumentViewerModalProps {
 
 function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalProps) {
   const [documentUrl, setDocumentUrl] = useState<string>("")
-  const [activeViewerTab, setActiveViewerTab] = useState<string>("native")
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -299,11 +297,13 @@ function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalP
   const isText = ["txt", "md", "csv"].includes(fileExt)
   const isOffice = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(fileExt)
 
-  // Create Google Docs Viewer URL
-  const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(documentUrl)}&embedded=true`
+  // Choose the best viewer based on file type
+  let viewerUrl = documentUrl
 
-  // Create Microsoft Office Online Viewer URL
-  const officeOnlineViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(documentUrl)}`
+  // For office documents, use Google Docs Viewer
+  if (isOffice) {
+    viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(documentUrl)}&embedded=true`
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -333,17 +333,6 @@ function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalP
         </DialogHeader>
 
         <div className="flex-1 min-h-0 p-6 pt-2">
-          {/* Viewer tabs for different preview options */}
-          {(isOffice || isPDF) && (
-            <ViewerTabs value={activeViewerTab} onValueChange={setActiveViewerTab} className="mb-4">
-              <ViewerTabsList className="grid w-full grid-cols-3">
-                <ViewerTabsTrigger value="native">Native Viewer</ViewerTabsTrigger>
-                <ViewerTabsTrigger value="google">Google Docs</ViewerTabsTrigger>
-                <ViewerTabsTrigger value="office">Office Online</ViewerTabsTrigger>
-              </ViewerTabsList>
-            </ViewerTabs>
-          )}
-
           {/* Loading indicator */}
           {isLoading && (
             <div className="w-full h-[70vh] flex flex-col items-center justify-center border rounded-lg bg-muted/50">
@@ -352,25 +341,21 @@ function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalP
             </div>
           )}
 
-          {/* Native viewer tab content */}
-          {(!isOffice || activeViewerTab === "native") && !isLoading && (
-            <div
-              className={`w-full h-[70vh] ${isOffice || isPDF ? "hidden" : ""} ${activeViewerTab === "native" ? "!block" : ""}`}
-            >
-              {/* PDF Native Viewer */}
-              {isPDF && documentUrl && (
-                <div className="w-full h-full border rounded-lg overflow-hidden">
-                  <iframe
-                    src={`${documentUrl}#toolbar=1&navpanes=1&scrollbar=1`}
-                    className="w-full h-full"
-                    title={document.title}
-                  />
-                </div>
+          {/* Document viewer */}
+          {!isLoading && (
+            <div className="w-full h-[70vh] border rounded-lg overflow-hidden">
+              {/* PDF Viewer */}
+              {isPDF && (
+                <iframe
+                  src={`${documentUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+                  className="w-full h-full"
+                  title={document.title}
+                />
               )}
 
               {/* Image Viewer */}
-              {isImage && documentUrl && (
-                <div className="w-full h-full flex items-center justify-center border rounded-lg overflow-hidden bg-muted/50">
+              {isImage && (
+                <div className="w-full h-full flex items-center justify-center bg-muted/50">
                   <img
                     src={documentUrl || "/placeholder.svg"}
                     alt={document.title}
@@ -380,26 +365,14 @@ function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalP
               )}
 
               {/* Text Viewer */}
-              {isText && documentUrl && (
-                <div className="w-full h-full border rounded-lg overflow-hidden">
-                  <iframe src={documentUrl} className="w-full h-full" title={document.title} />
-                </div>
-              )}
+              {isText && <iframe src={documentUrl} className="w-full h-full" title={document.title} />}
 
-              {/* Office Documents - Native not supported */}
-              {isOffice && (
-                <div className="w-full h-full flex flex-col items-center justify-center border rounded-lg bg-muted/50">
-                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Native preview not available</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Please use Google Docs or Office Online viewers for this document type.
-                  </p>
-                </div>
-              )}
+              {/* Office Documents - Use Google Docs Viewer */}
+              {isOffice && <iframe src={viewerUrl} className="w-full h-full" title={document.title} />}
 
-              {/* Unsupported file types */}
+              {/* Fallback for unsupported file types */}
               {!isPDF && !isImage && !isText && !isOffice && (
-                <div className="w-full h-full flex flex-col items-center justify-center border rounded-lg bg-muted/50">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50">
                   <FileText className="h-16 w-16 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Preview not available</h3>
                   <p className="text-muted-foreground text-center mb-4">
@@ -416,28 +389,6 @@ function DocumentViewerModal({ document, isOpen, onClose }: DocumentViewerModalP
                   </a>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Google Docs Viewer tab content */}
-          {(isOffice || isPDF) && activeViewerTab === "google" && !isLoading && (
-            <div className="w-full h-[70vh] border rounded-lg overflow-hidden">
-              <iframe
-                src={googleDocsViewerUrl}
-                className="w-full h-full"
-                title={`${document.title} - Google Docs Viewer`}
-              />
-            </div>
-          )}
-
-          {/* Office Online Viewer tab content */}
-          {(isOffice || isPDF) && activeViewerTab === "office" && !isLoading && (
-            <div className="w-full h-[70vh] border rounded-lg overflow-hidden">
-              <iframe
-                src={officeOnlineViewerUrl}
-                className="w-full h-full"
-                title={`${document.title} - Office Online Viewer`}
-              />
             </div>
           )}
         </div>
